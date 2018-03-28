@@ -1,28 +1,7 @@
-define([
-    'dojo/_base/declare',
-    'dijit/_WidgetBase',
-    'dijit/_TemplatedMixin',
-    'dijit/_Contained',
-    './_Control', // layer control base class
-    './../plugins/legendUtil'
-], function (
-    declare,
-    _WidgetBase,
-    _TemplatedMixin,
-    _Contained,
-    _Control,
-    legendUtil
-) {
-    var KMLControl = declare([_WidgetBase, _TemplatedMixin, _Contained, _Control], {
-        _layerType: 'vector', // constant
-        _esriLayerType: 'kml', // constant
-        // create and legend
-        _layerTypeInit: function () {
-            this._expandClick();
-            if (legendUtil.isLegend(this.controlOptions.noLegend, this.controller.noLegend)) {
-                legendUtil.layerLegend(this.layer, this.expandNode);
-            }
-        }
-    });
-    return KMLControl;
-});
+/*  ConfigurableMapViewerCMV
+ *  version 2.0.0-beta.2
+ *  Project: https://cmv.io/
+ */
+
+define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dijit/_Contained","./_Control","./../plugins/legendUtil"],function(e,i,n,t,d,o){return e([i,n,t,d],{_layerType:"vector",_esriLayerType:"kml",_layerTypeInit:function(){this._expandClick(),o.isLegend(this.controlOptions.noLegend,this.controller.noLegend)&&o.layerLegend(this.layer,this.expandNode)}})});
+//# sourceMappingURL=KML.js.map

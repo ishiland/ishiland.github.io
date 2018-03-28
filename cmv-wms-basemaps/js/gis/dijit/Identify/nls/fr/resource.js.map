@@ -1,0 +1,1 @@
+{"version":3,"sources":["resource.js"],"names":["define","labels","selectLayer","allVisibleLayers","rightClickMenuItem","label","mapInfoWindow","identifyingTitle"],"mappings":";;;;;AAAAA,QACIC,QACIC,YAAa,8EACbC,iBAAkB,qCAEtBC,oBACIC,MAAO,kBAEXC,eACIC,iBAAkB","file":"resource.js"}

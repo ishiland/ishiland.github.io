@@ -1,120 +1,92 @@
 define([
     'esri/layers/WMSLayer',
-    'esri/layers/WMSLayerInfo',
-    'esri/geometry/Extent'
-], function (WMSLayer, WMSLayerInfo, Extent) {
+    'esri/layers/WMSLayerInfo'
+    // 'esri/dijit/Basemap',
+    // 'esri/dijit/BasemapLayer'
+], function (WMSLayer, WMSLayerInfo) { //, Basemap, BasemapLayer) {
+
+
+    // Configure State of New Jersey's WMS Server
+    var resourceInfoStateOfNJ = {
+        extent: {},
+        layerInfos: [new WMSLayerInfo({
+            title: 'State of NJ, Office of Information Technology'
+        })],
+        version: ['1.1.1']
+    };
+
+
+    // Configure USGS's WMS Server
+    var resourceInfoUSGS = {
+        extent: {},
+        layerInfos: [new WMSLayerInfo({
+            title: 'U.S. Geological Survey Mineral Resources Program'
+        })],
+        version: ['1.3.0']
+    };
+
+
     return {
         map: true, // needs a refrence to the map
-        mode: 'agol', //must be either 'agol' or 'custom'
-        title: 'Basemaps', // title for widget
+        mode: 'ago', //must be either 'agol' or 'custom'
+        title: 'WMS Basemaps', // title for widget
         mapStartBasemap: 'hybrid', // must match one of the basemap keys below
+
         //basemaps to show in menu. define in basemaps object below and reference by name here
-        // TODO Is this array necessary when the same keys are explicitly included/excluded below?
+        basemapsToShow: ['hybrid', 'topo', 'Natural2015', 'Infrared2015', 'Geology'],
 
-        basemapsToShow: ['hybrid','streets','topo', 'Natural2015', 'Infrared2015', 'Natural2013', 'Natural2012', 'Infrared2012', 'Natural2010', 'Natural2007', 'Infrared2007'],
-
-        // a WMS configuration (WMSLayer). The service where WMS basemaps below will be pulled from.
-        wmsConfig: new WMSLayer('http://geodata.state.nj.us/imagerywms/Natural2015?', {
-            id: 'wmslayer',
-            format: 'png',
-            resourceInfo: {
-                extent: new Extent({
-                    'xmin': -8415837.926295,
-                    'ymin': 4708913.980133,
-                    'xmax': -8223182.925376,
-                    'ymax': 5067478.812879,
-                    'spatialReference': {
-                        'wkid': 3857
-                    }
-                }),
-                layerInfos: [new WMSLayerInfo({
-                    title: 'Imagery'
-                })],
-                version: ['1.1.1']
-            },
-            visibleLayers: []
-        }),
 
         // define all valid custom basemaps here. Object of Basemap objects. For custom & wms basemaps, the key name and basemap id must match.
         basemaps: {
 
+            // custom basemap
+            // streets: {
+            //     title: 'Streets - Custom',
+            //     basemap: new Basemap({
+            //         id: 'streets',
+            //         layers: [new BasemapLayer({
+            //             url: 'http://services.arcgisonline.com/arcgis/rest/services/ESRI_StreetMap_World_2D/MapServer'
+            //         })]
+            //     })
+            // },
+
             // agol basemaps
-            streets: {
-                title: 'Streets'
-            },
             hybrid: {
-                title: 'Hybrid'
+                title: 'Hybrid - AGOL'
             },
             topo: {
-                title: 'Topo'
+                title: 'Topo - AGOL'
             },
 
-            
-            // examples of WMS layers
             Natural2015: {
-                title: '2015 - Leaf Off (WMS)',
-                wms: true,
-                basemap :{
-                    id: 'Natural2015'
-                }
+                title: 'NJ 2015 Leaf Off - WMS',
+                basemap: new WMSLayer('http://geodata.state.nj.us/imagerywms/Natural2015?', {
+                    id: 'Natural2015',
+                    format: 'png',
+                    resourceInfo: resourceInfoStateOfNJ,
+                    visibleLayers: ['Natural2015']
+                })
             },
 
             Infrared2015: {
-                title: '2015 - Infrared (WMS)',
-                wms: true,
-                basemap :{
-                    id: 'Infrared2015'
-                }
+                title: 'NJ 2015 Infrared - WMS',
+                basemap: new WMSLayer('http://geodata.state.nj.us/imagerywms/Infrared2015?', {
+                    id: 'Infrared2015',
+                    format: 'png',
+                    resourceInfo: resourceInfoStateOfNJ,
+                    visibleLayers: ['Infrared2015']
+                })
             },
 
-            Natural2013: {
-                title: '2013 - Leaf On (WMS)',
-                wms: true,
-                basemap :{
-                    id: 'Natural2013'
-                }
-            },
-
-            Natural2012: {
-                title: '2012 - Leaf Off (WMS)',
-                wms: true,
-                basemap :{
-                    id: 'Natural2012'
-                }
-            },
-
-            Infrared2012: {
-                title: '2012 - Infrared (WMS)',
-                wms: true,
-                basemap :{
-                    id: 'Infrared2012'
-                }
-            },
-
-            Natural2010: {
-                title: '2010 - Leaf On (WMS)',
-                wms: true,
-                basemap :{
-                    id: 'Natural2010'
-                }
-            },
-
-            Natural2007: {
-                title: '2007 - Leaf Off (WMS)',
-                wms: true,
-                basemap :{
-                    id: 'Natural2007'
-                }
-            },
-
-            Infrared2007: {
-                title: '2007 - Infrared (WMS)',
-                wms: true,
-                basemap :{
-                    id: 'Infrared2007'
-                }
+            Geology: {
+                title: 'NJ Geology - WMS',
+                basemap: new WMSLayer('https://mrdata.usgs.gov/services/nj?', {
+                    id: 'Geology',
+                    format: 'png',
+                    resourceInfo: resourceInfoUSGS,
+                    visibleLayers: ['New_Jersey_Geology']
+                })
             }
-
         }
     };
 });

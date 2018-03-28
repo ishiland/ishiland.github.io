@@ -1,66 +1,7 @@
-define([
-    'dojo/_base/declare',
-    'dijit/_WidgetBase',
-    'esri/dijit/Measurement',
-    'dojo/aspect',
-    'dojo/_base/lang',
-    'dojo/dom-construct',
-    'dojo/topic'
-], function (declare, _WidgetBase, Measurement, aspect, lang, domConstruct, topic) {
+/*  ConfigurableMapViewerCMV
+ *  version 2.0.0-beta.2
+ *  Project: https://cmv.io/
+ */
 
-    return declare([_WidgetBase], {
-        declaredClass: 'gis.dijit.Measurement',
-        mapClickMode: null,
-        postCreate: function () {
-            this.inherited(arguments);
-            this.measure = new Measurement({
-                map: this.map,
-                defaultAreaUnit: this.defaultAreaUnit,
-                defaultLengthUnit: this.defaultLengthUnit
-            }, domConstruct.create('div')).placeAt(this.domNode);
-            this.measure.startup();
-            aspect.after(this.measure, 'setTool', lang.hitch(this, 'checkMeasureTool'));
-            aspect.after(this.measure, 'closeTool', lang.hitch(this, 'checkMeasureTool'));
-            this.own(topic.subscribe('mapClickMode/currentSet', lang.hitch(this, 'setMapClickMode')));
-            if (this.parentWidget && this.parentWidget.toggleable) {
-                this.own(aspect.after(this.parentWidget, 'toggle', lang.hitch(this, function () {
-                    this.onLayoutChange(this.parentWidget.open);
-                })));
-            }
-        },
-        checkMeasureTool: function () {
-            // no measurement tool is active
-            if (!this.measure.activeTool || this.measure.activeTool === '') {
-                if (this.mapClickMode === 'measure') {
-                    this.connectMapClick();
-                }
-                // a measurement tool is active
-            } else {
-                if (this.mapClickMode !== 'measure') {
-                    this.disconnectMapClick();
-                }
-            }
-        },
-        disconnectMapClick: function () {
-            topic.publish('mapClickMode/setCurrent', 'measure');
-        },
-        connectMapClick: function () {
-            topic.publish('mapClickMode/setDefault');
-        },
-        onLayoutChange: function (open) {
-            // end measurement on close of title pane
-            if (!open && this.mapClickMode === 'measure') {
-                this.connectMapClick();
-            }
-        },
-        setMapClickMode: function (mode) {
-            this.mapClickMode = mode;
-            if (mode !== 'measure') {
-                this.measure.setTool('area', false);
-                this.measure.setTool('distance', false);
-                this.measure.setTool('location', false);
-                this.measure.clearResult();
-            }
-        }
-    });
-});
+define(["dojo/_base/declare","dijit/_WidgetBase","esri/dijit/Measurement","dojo/aspect","dojo/_base/lang","dojo/dom-construct","dojo/topic"],function(e,t,i,s,a,o,c){return e([t],{declaredClass:"gis.dijit.Measurement",mapClickMode:null,postCreate:function(){this.inherited(arguments),this.measure=new i({map:this.map,defaultAreaUnit:this.defaultAreaUnit,defaultLengthUnit:this.defaultLengthUnit},o.create("div")).placeAt(this.domNode),this.measure.startup(),s.after(this.measure,"setTool",a.hitch(this,"checkMeasureTool")),s.after(this.measure,"closeTool",a.hitch(this,"checkMeasureTool")),this.own(c.subscribe("mapClickMode/currentSet",a.hitch(this,"setMapClickMode"))),this.parentWidget&&this.parentWidget.toggleable&&this.own(s.after(this.parentWidget,"toggle",a.hitch(this,function(){this.onLayoutChange(this.parentWidget.open)})))},checkMeasureTool:function(){this.measure.activeTool&&""!==this.measure.activeTool?"measure"!==this.mapClickMode&&this.disconnectMapClick():"measure"===this.mapClickMode&&this.connectMapClick()},disconnectMapClick:function(){c.publish("mapClickMode/setCurrent","measure")},connectMapClick:function(){c.publish("mapClickMode/setDefault")},onLayoutChange:function(e){e||"measure"!==this.mapClickMode||this.connectMapClick()},setMapClickMode:function(e){this.mapClickMode=e,"measure"!==e&&(this.measure.setTool("area",!1),this.measure.setTool("distance",!1),this.measure.setTool("location",!1),this.measure.clearResult())}})});
+//# sourceMappingURL=Measurement.js.map
