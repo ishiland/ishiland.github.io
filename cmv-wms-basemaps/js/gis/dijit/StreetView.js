@@ -1,7 +1,315 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dijit/_WidgetsInTemplateMixin',
+    'dojo/_base/lang',
+    'dojo/aspect',
+    'dojo/topic',
+    'esri/layers/GraphicsLayer',
+    'esri/graphic',
+    'esri/renderers/SimpleRenderer',
+    'dojo/text!./StreetView/templates/StreetView.html',
+    'esri/symbols/PictureMarkerSymbol',
+    'dojo/dom-style',
+    'dojo/dom-geometry',
+    'esri/geometry/Point',
+    'esri/SpatialReference',
+    'dijit/MenuItem',
+    'proj4js/proj4',
+    'dojo/i18n!./StreetView/nls/resource',
+    'gis/plugins/Google',
+    'dijit/form/ToggleButton',
+    'xstyle/css!./StreetView/css/StreetView.css'
+], function (declare, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, lang, aspect, topic, GraphicsLayer, Graphic, SimpleRenderer, template, PictureMarkerSymbol, domStyle, domGeom, Point, SpatialReference, MenuItem, proj4, i18n, Google) {
+    //cache google so
+    var google;
+    return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
+        widgetsInTemplate: true,
+        templateString: template,
+        i18n: i18n,
+        mapClickMode: null,
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dijit/_WidgetsInTemplateMixin","dojo/_base/lang","dojo/aspect","dojo/topic","esri/layers/GraphicsLayer","esri/graphic","esri/renderers/SimpleRenderer","dojo/text!./StreetView/templates/StreetView.html","esri/symbols/PictureMarkerSymbol","dojo/dom-style","dojo/dom-geometry","esri/geometry/Point","esri/SpatialReference","dijit/MenuItem","proj4js/proj4","dojo/i18n!./StreetView/nls/resource","gis/plugins/Google","dijit/form/ToggleButton","xstyle/css!./StreetView/css/StreetView.css"],function(t,e,i,s,n,a,o,r,h,c,p,l,d,m,u,g,w,C,k,f){var S;return t([e,i,s],{widgetsInTemplate:!0,templateString:p,i18n:k,mapClickMode:null,panoOptions:null,proj4BaseURL:"https://epsg.io/",proj4Catalog:"EPSG",proj4CustomURL:null,postCreate:function(){this.inherited(arguments),f.load(n.hitch(this,function(t){S=t,this.panoOptions={addressControlOptions:{position:S.maps.ControlPosition.TOP_RIGHT},linksControl:!1,panControl:!1,zoomControlOptions:{style:S.maps.ZoomControlStyle.SMALL},enableCloseButton:!1},this.createGraphicsLayer(),this.map.on("click",n.hitch(this,"getStreetView")),this.own(o.subscribe("mapClickMode/currentSet",n.hitch(this,"setMapClickMode"))),this.parentWidget&&(this.parentWidget.toggleable&&(this.own(a.after(this.parentWidget,"toggle",n.hitch(this,function(){this.onLayoutChange(this.parentWidget.open)}))),this.onLayoutChange(this.parentWidget.open)),this.own(a.after(this.parentWidget,"resize",n.hitch(this,"resize"))),this.own(o.subscribe(this.parentWidget.id+"/resize/resize",n.hitch(this,"resize")))),window.proj4||(window.proj4=C),this.mapRightClickMenu&&this.addRightClickMenu()}))},createGraphicsLayer:function(){this.pointSymbol=new l(require.toUrl("gis/dijit/StreetView/images/blueArrow.png"),30,30),this.pointGraphics=new r({id:"streetview_graphics",title:"Street View"}),this.pointRenderer=new c(this.pointSymbol),this.pointRenderer.label="Street View",this.pointRenderer.description="Street View",this.pointGraphics.setRenderer(this.pointRenderer),this.map.addLayer(this.pointGraphics)},addRightClickMenu:function(){this.map.on("MouseDown",n.hitch(this,function(t){this.mapRightClickPoint=t.mapPoint})),this.mapRightClickMenu.addChild(new w({label:this.i18n.rightClickMenuItem.label,onClick:n.hitch(this,"streetViewFromMapRightClick")}))},onOpen:function(){this.pointGraphics.show(),this.panorama&&this.panoramaService||(this.panorama=new S.maps.StreetViewPanorama(this.panoNode,this.panoOptions),this.panoramaService=new S.maps.StreetViewService)},onClose:function(){this.pointGraphics.hide(),"streetview"===this.mapClickMode&&this.connectMapClick()},onLayoutChange:function(t){t?this.onOpen():this.onClose()},placePoint:function(){this.streetViewButtonDijit.get("checked")?this.disconnectMapClick():this.connectMapClick()},disconnectMapClick:function(){this.streetViewButtonDijit.set("checked",!0),this.map.setMapCursor("crosshair"),o.publish("mapClickMode/setCurrent","streetview")},connectMapClick:function(){this.streetViewButtonDijit.set("checked",!1),this.map.setMapCursor("auto"),o.publish("mapClickMode/setDefault")},clearGraphics:function(){this.pointGraphics.clear(),d.set(this.noStreetViewResults,"display","block")},enableStreetViewClick:function(){this.disconnectMapClick()},disableStreetViewClick:function(){this.connectMapClick()},getStreetView:function(t,e){if("streetview"===this.mapClickMode||e){var i=t.mapPoint;if(!i)return;this.parentWidget&&!this.parentWidget.open&&this.parentWidget.toggle();var s=null,a=i.spatialReference.wkid;102100===a&&(a=3857);var o=this.proj4Catalog+":"+String(a);if(!C.defs[o]){var r=this.proj4CustomURL||this.proj4BaseURL+String(a)+".js";return void require([r],n.hitch(this,"getStreetView",t,!0))}var h=C(C.defs[o]).inverse([i.x,i.y]);h&&(s={x:h[0],y:h[1]}),d.set(this.streetViewInstructions,"display","none"),s?(d.set(this.noStreetViewResults,"display","none"),this.getPanoramaLocation(s)):(this.setPanoPlace=null,this.clearGraphics(),d.set(this.noStreetViewResults,"display","block"))}},getPanoramaLocation:function(t){var e=new S.maps.LatLng(t.y,t.x);this.panoramaService.getPanoramaByLocation(e,50,n.hitch(this,"getPanoramaByLocationComplete",t)),S.maps.event.addListener(this.panorama,"position_changed",n.hitch(this,"setPlaceMarkerPosition")),S.maps.event.addListener(this.panorama,"pov_changed",n.hitch(this,"setPlaceMarkerRotation"))},getPanoramaByLocationComplete:function(t,e,i){if("OK"===i){this.disableStreetViewClick();var s=new S.maps.LatLng(t.y,t.x);this.setPanoPlace=s,this.firstSet=!0,this.panorama.setPosition(s)}else"ZERO_RESULTS"===i?(this.setPanoPlace=null,this.clearGraphics(),this.connectMapClick(),d.set(this.noStreetViewResults,"display","block")):(this.setPanoPlace=null,this.clearGraphics(),o.publish("viewer/handleError",{source:"StreetView",error:"Unknown."}))},resize:function(t){t&&t.h&&m.setContentSize(this.containerNode,{h:t.h-2}),this.panorama&&S.maps.event.trigger(this.panorama,"resize")},setPlaceMarkerPosition:function(){this.placeMarker&&0!==this.pointGraphics.graphics.length||(this.placeMarker=new h,this.pointGraphics.add(this.placeMarker));var t=this.panorama.getPosition(),e=t.lat(),i=t.lng();if(!isNaN(e)&&!isNaN(i)){var s=null,a=this.map.spatialReference.wkid;102100===a&&(a=3857);var o=this.proj4Catalog+":"+String(a);if(!C.defs[o]){var r=this.proj4CustomURL||this.proj4BaseURL+String(a)+".js";return void require([r],n.hitch(this,"setPlaceMarkerPosition"))}if(s=C(C.defs[o]).forward([i,e])){var c=new u(s,new g({wkid:a}));if(this.placeMarker.setGeometry(c),this.setPanoPlace&&!this.firstSet){var p=S.maps.geometry.spherical.computeHeading(t,this.setPanoPlace);this.panorama.setPov({heading:p,pitch:0}),setTimeout(n.hitch(this,function(){this.setPanoPlace=null}),1e3)}else this.firstSet=!1}}},setPlaceMarkerRotation:function(){if(this.placeMarker){var t=this.panorama.getPov();this.pointSymbol.setAngle(t.heading),this.pointGraphics.refresh()}},streetViewFromMapRightClick:function(){var t={mapPoint:this.mapRightClickPoint};this.getStreetView(t,!0)},setMapClickMode:function(t){this.mapClickMode=t}})});
-//# sourceMappingURL=StreetView.js.map
+        panoOptions: null,
+
+        // in case this changes some day
+        proj4BaseURL: 'https://epsg.io/',
+
+        //  options are ESRI, EPSG and SR-ORG
+        // See http://sepsg.io/ for more information
+        proj4Catalog: 'EPSG',
+
+        // if desired, you can load a projection file from your server
+        // instead of using one from epsg.io
+        // i.e., http://server/projections/102642.js
+        proj4CustomURL: null,
+
+        postCreate: function () {
+            this.inherited(arguments);
+            //load the google api asynchronously
+            Google.load(lang.hitch(this, function (g) {
+                //store a reference to google
+                google = g;
+
+                //init our panoOptions since they depend on google
+                this.panoOptions = {
+                    addressControlOptions: {
+                        position: google.maps.ControlPosition.TOP_RIGHT
+                    },
+                    linksControl: false,
+                    panControl: false,
+                    zoomControlOptions: {
+                        style: google.maps.ZoomControlStyle.SMALL
+                    },
+                    enableCloseButton: false
+                };
+                this.createGraphicsLayer();
+                this.map.on('click', lang.hitch(this, 'getStreetView'));
+
+                this.own(topic.subscribe('mapClickMode/currentSet', lang.hitch(this, 'setMapClickMode')));
+
+                if (this.parentWidget) {
+                    if (this.parentWidget.toggleable) {
+                        this.own(aspect.after(this.parentWidget, 'toggle', lang.hitch(this, function () {
+                            this.onLayoutChange(this.parentWidget.open);
+                        })));
+
+                        // trigger layout change since parentWidget might
+                        // already be open
+                        this.onLayoutChange(this.parentWidget.open);
+                    }
+                    this.own(aspect.after(this.parentWidget, 'resize', lang.hitch(this, 'resize')));
+                    this.own(topic.subscribe(this.parentWidget.id + '/resize/resize', lang.hitch(this, 'resize')));
+                }
+
+                if (!window.proj4) {
+                    window.proj4 = proj4;
+                }
+
+                if (this.mapRightClickMenu) {
+                    this.addRightClickMenu();
+                }
+            }));
+        },
+        createGraphicsLayer: function () {
+            this.pointSymbol = new PictureMarkerSymbol(require.toUrl('gis/dijit/StreetView/images/blueArrow.png'), 30, 30);
+            this.pointGraphics = new GraphicsLayer({
+                id: 'streetview_graphics',
+                title: 'Street View'
+            });
+            this.pointRenderer = new SimpleRenderer(this.pointSymbol);
+            this.pointRenderer.label = 'Street View';
+            this.pointRenderer.description = 'Street View';
+            this.pointGraphics.setRenderer(this.pointRenderer);
+            this.map.addLayer(this.pointGraphics);
+        },
+        addRightClickMenu: function () {
+            this.map.on('MouseDown', lang.hitch(this, function (evt) {
+                this.mapRightClickPoint = evt.mapPoint;
+            }));
+            this.mapRightClickMenu.addChild(new MenuItem({
+                label: this.i18n.rightClickMenuItem.label,
+                onClick: lang.hitch(this, 'streetViewFromMapRightClick')
+            }));
+        },
+        onOpen: function () {
+            this.pointGraphics.show();
+            if (!this.panorama || !this.panoramaService) {
+                this.panorama = new google.maps.StreetViewPanorama(this.panoNode, this.panoOptions);
+                this.panoramaService = new google.maps.StreetViewService();
+            }
+        },
+        onClose: function () {
+            // end streetview on close of title pane
+            this.pointGraphics.hide();
+            if (this.mapClickMode === 'streetview') {
+                this.connectMapClick();
+            }
+        },
+        onLayoutChange: function (open) {
+            if (open) {
+                this.onOpen();
+            } else {
+                this.onClose();
+            }
+        },
+        placePoint: function () {
+            if (this.streetViewButtonDijit.get('checked')) {
+                this.disconnectMapClick();
+            } else {
+                this.connectMapClick();
+            }
+            //get map click, set up listener in post create
+        },
+        disconnectMapClick: function () {
+            this.streetViewButtonDijit.set('checked', true);
+            this.map.setMapCursor('crosshair');
+            topic.publish('mapClickMode/setCurrent', 'streetview');
+        },
+        connectMapClick: function () {
+            this.streetViewButtonDijit.set('checked', false);
+            this.map.setMapCursor('auto');
+            topic.publish('mapClickMode/setDefault');
+        },
+        clearGraphics: function () {
+            this.pointGraphics.clear();
+            domStyle.set(this.noStreetViewResults, 'display', 'block');
+        },
+        enableStreetViewClick: function () {
+            this.disconnectMapClick();
+        },
+        disableStreetViewClick: function () {
+            this.connectMapClick();
+        },
+        getStreetView: function (evt, overRide) {
+            if (this.mapClickMode === 'streetview' || overRide) {
+                var mapPoint = evt.mapPoint;
+                if (!mapPoint) {
+                    return;
+                }
+
+                if (this.parentWidget && !this.parentWidget.open) {
+                    this.parentWidget.toggle();
+                }
+
+                // convert the map point's coordinate system into lat/long
+                var geometry = null,
+                    wkid = mapPoint.spatialReference.wkid;
+                if (wkid === 102100) {
+                    wkid = 3857;
+                }
+                var key = this.proj4Catalog + ':' + String(wkid);
+                if (!proj4.defs[key]) {
+                    var url = this.proj4CustomURL || this.proj4BaseURL + String(wkid) + '.js';
+                    require([url], lang.hitch(this, 'getStreetView', evt, true));
+                    return;
+                }
+                // only need one projection as we are
+                // converting to WGS84 lat/long
+                var projPoint = proj4(proj4.defs[key]).inverse([mapPoint.x, mapPoint.y]);
+                if (projPoint) {
+                    geometry = {
+                        x: projPoint[0],
+                        y: projPoint[1]
+                    };
+                }
+
+                domStyle.set(this.streetViewInstructions, 'display', 'none');
+                if (geometry) {
+                    domStyle.set(this.noStreetViewResults, 'display', 'none');
+                    this.getPanoramaLocation(geometry);
+                } else {
+                    this.setPanoPlace = null;
+                    this.clearGraphics();
+                    domStyle.set(this.noStreetViewResults, 'display', 'block');
+                }
+            }
+
+        },
+        getPanoramaLocation: function (geoPoint) {
+            var place = new google.maps.LatLng(geoPoint.y, geoPoint.x);
+            this.panoramaService.getPanoramaByLocation(place, 50, lang.hitch(this, 'getPanoramaByLocationComplete', geoPoint));
+            // Panorama Events -- Changed location
+            google.maps.event.addListener(this.panorama, 'position_changed', lang.hitch(this, 'setPlaceMarkerPosition'));
+            // Panorama Events -- Changed Rotation
+            google.maps.event.addListener(this.panorama, 'pov_changed', lang.hitch(this, 'setPlaceMarkerRotation'));
+        },
+        getPanoramaByLocationComplete: function (geoPoint, StreetViewPanoramaData, StreetViewStatus) {
+            if (StreetViewStatus === 'OK') {
+                this.disableStreetViewClick();
+                var place = new google.maps.LatLng(geoPoint.y, geoPoint.x);
+                this.setPanoPlace = place;
+                this.firstSet = true;
+                this.panorama.setPosition(place);
+            } else if (StreetViewStatus === 'ZERO_RESULTS') {
+                this.setPanoPlace = null;
+                this.clearGraphics();
+                // reset default map click mode
+                this.connectMapClick();
+                domStyle.set(this.noStreetViewResults, 'display', 'block');
+            } else {
+                this.setPanoPlace = null;
+                this.clearGraphics();
+                topic.publish('viewer/handleError', {
+                    source: 'StreetView',
+                    error: 'Unknown.'
+                });
+            }
+        },
+        resize: function (options) {
+            if (options && options.h) {
+                domGeom.setContentSize(this.containerNode, {
+                    h: (options.h - 2)
+                });
+            }
+            if (this.panorama) {
+                google.maps.event.trigger(this.panorama, 'resize');
+            }
+        },
+        setPlaceMarkerPosition: function () {
+            if (!this.placeMarker || this.pointGraphics.graphics.length === 0) {
+                this.placeMarker = new Graphic();
+                // Add graphic to the map
+                this.pointGraphics.add(this.placeMarker);
+            }
+            // get the new lat/long from streetview
+            var panoPosition = this.panorama.getPosition();
+            var positionLat = panoPosition.lat();
+            var positionLong = panoPosition.lng();
+            // Make sure they are numbers
+            if (!isNaN(positionLat) && !isNaN(positionLong)) {
+                // convert the resulting lat/long to the map's spatial reference
+                var xy = null,
+                    wkid = this.map.spatialReference.wkid;
+                if (wkid === 102100) {
+                    wkid = 3857;
+                }
+                var key = this.proj4Catalog + ':' + String(wkid);
+                if (!proj4.defs[key]) {
+                    var url = this.proj4CustomURL || this.proj4BaseURL + String(wkid) + '.js';
+                    require([url], lang.hitch(this, 'setPlaceMarkerPosition'));
+                    return;
+                }
+                // only need the one projection as we are
+                // converting from WGS84 lat/long
+                xy = proj4(proj4.defs[key]).forward([positionLong, positionLat]);
+                if (xy) {
+                    var point = new Point(xy, new SpatialReference({
+                        wkid: wkid
+                    }));
+
+                    // change point position on the map
+                    this.placeMarker.setGeometry(point);
+                    if (this.setPanoPlace && !this.firstSet) {
+                        var heading = google.maps.geometry.spherical.computeHeading(panoPosition, this.setPanoPlace);
+                        this.panorama.setPov({
+                            heading: heading,
+                            pitch: 0
+                        });
+                        setTimeout(lang.hitch(this, function () {
+                            this.setPanoPlace = null;
+                        }), 1000);
+                    } else {
+                        this.firstSet = false;
+                    }
+                }
+            }
+        },
+        setPlaceMarkerRotation: function () {
+            if (this.placeMarker) {
+                var pov = this.panorama.getPov();
+                this.pointSymbol.setAngle(pov.heading);
+                this.pointGraphics.refresh();
+            }
+        },
+        streetViewFromMapRightClick: function () {
+            var evt = {
+                mapPoint: this.mapRightClickPoint
+            };
+            this.getStreetView(evt, true);
+        },
+        setMapClickMode: function (mode) {
+            this.mapClickMode = mode;
+        }
+    });
+});

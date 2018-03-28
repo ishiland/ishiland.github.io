@@ -1,7 +1,140 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+// adapted from https://github.com/esri/arcgis-dijit-geocoder-button-js/
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dijit/a11yclick',
+    'dojo/_base/lang',
+    'dojo/on',
+    'dojo/dom-class',
+    'dojo/dom-style',
+    'esri/dijit/Geocoder',
+    'dijit/MenuItem',
+    'esri/symbols/SimpleMarkerSymbol',
+    'esri/graphic',
+    'esri/InfoTemplate',
+    'esri/layers/GraphicsLayer',
+    'dojo/text!./Geocoder/templates/Geocoder.html',
+    'dojo/i18n!./Geocoder/nls/resource',
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dijit/a11yclick","dojo/_base/lang","dojo/on","dojo/dom-class","dojo/dom-style","esri/dijit/Geocoder","dijit/MenuItem","esri/symbols/SimpleMarkerSymbol","esri/graphic","esri/InfoTemplate","esri/layers/GraphicsLayer","dojo/text!./Geocoder/templates/Geocoder.html","dojo/i18n!./Geocoder/nls/resource","xstyle/css!./Geocoder/css/Geocoder.css"],function(t,e,i,s,o,a,n,d,r,h,c,l,p,g,m,u){return t([e,i],{templateString:m,i18n:u,baseClass:"gis_GeocoderDijit",expanded:!0,collapsible:!1,geocoderOptions:{autoComplete:!0},reverseGeocodeTemplate:['<table class="attrTable">','<tr valign="top">','<td class="attrName">${i18n.labels.address}</td>','<td class="attrValue">${Address}</td>',"</tr>",'<tr valign="top">','<td class="attrName">${i18n.labels.neighborhood}</td>','<td class="attrValue">${Neighborhood}</td>',"</tr>",'<tr valign="top">','<td class="attrName">${i18n.labels.city}</td>','<td class="attrValue">${City}</td>',"</tr>",'<tr valign="top">','<td class="attrName">${i18n.labels.subregion}</td>','<td class="attrValue">${SubRegion}</td>',"</tr>",'<tr valign="top">','<td class="attrName">${i18n.labels.region}</td>','<td class="attrValue">${Region}</td>',"</tr>",'<tr valign="top">','<td class="attrName">${i18n.labels.postalCode}</td>','<td class="attrValue">${Postal}&nbsp;${PostalExt}</td>',"</tr>",'<tr valign="top">','<td class="attrName">${i18n.labels.countryCode}</td>','<td class="attrValue">${CountryCode}</td>',"</tr>",'<tr valign="top">','<td class="attrName">${i18n.labels.locatorName}</td>','<td class="attrValue">${Loc_name}</td>',"</tr>","</table>"].join(""),postCreate:function(){this.inherited(arguments);var t=o.mixin({},this.geocoderOptions,{map:this.map});this.geocoder=new r(t,this.geocoderNode),a(this.geocoder,"select",o.hitch(this,function(t){t.result&&this.show()})),this.collapsible?(a(this.map,"pan-start",o.hitch(this,function(){this.hide()})),this.own(a(this.searchNode,s,o.hitch(this,this.toggle)))):this.expanded=!0,this.geocoder.startup(),!0===this.expanded?this.show():this.hide(),this.mapRightClickMenu&&this.addRightClickMenu(),this.mapExtentSearch&&(this.geocoder.arcgisGeocoder.searchExtent=this.map.extent.getExtent(),this.map.on("extent-change",o.hitch(this,function(t){this.geocoder.arcgisGeocoder.searchExtent=t.extent})))},addRightClickMenu:function(){this.map.on("MouseDown",o.hitch(this,function(t){this.mapRightClickPoint=t.mapPoint})),this.mapRightClickMenu.addChild(new h({label:this.i18n.labels.getAddressHere,onClick:o.hitch(this,"reverseGeocode")})),this.symbol=new c,this.infoTemplate=new p("Location",this.reverseGeocodeTemplate),this.graphics=new g({id:"reverseGeocode"}),this.map.addLayer(this.graphics)},toggle:function(){"block"===d.get(this.searchContainerNode,"display")?this.hide():this.show()},hide:function(){d.set(this.searchContainerNode,"display","none"),n.remove(this.containerNode,"open"),this.geocoder&&this.geocoder.blur()},show:function(){d.set(this.searchContainerNode,"display","block"),n.add(this.containerNode,"open"),this.geocoder&&!this.expanded&&this.geocoder.focus()},reverseGeocode:function(){this.geocoder._task.locationToAddress(this.mapRightClickPoint,1e3,o.hitch(this,"reverseGeocodeComplete"))},reverseGeocodeComplete:function(t){var e=new l(t.location,this.symbol,t.address,this.infoTemplate);this.graphics.add(e),this.map.infoWindow.clearFeatures(),this.map.infoWindow.setTitle(e.getTitle()),this.map.infoWindow.setContent(e.getContent()),this.map.infoWindow.setFeatures([e]);var i=this.map.toScreen(t.location);this.map.infoWindow.show(i,this.map.getInfoWindowAnchor(i)),a.once(this.map.infoWindow,"hide",o.hitch(this,function(){this.graphics.clear()}))}})});
-//# sourceMappingURL=Geocoder.js.map
+    'xstyle/css!./Geocoder/css/Geocoder.css'
+], function (declare, _WidgetBase, _TemplatedMixin, a11yclick, lang, on, domClass, domStyle, Geocoder, MenuItem, SimpleMarkerSymbol, Graphic, InfoTemplate, GraphicsLayer, template, i18n) {
+
+    return declare([_WidgetBase, _TemplatedMixin], {
+        templateString: template,
+        i18n: i18n,
+        baseClass: 'gis_GeocoderDijit',
+        expanded: true,
+        collapsible: false,
+        geocoderOptions: {
+            autoComplete: true
+        },
+        reverseGeocodeTemplate: [
+            '<table class="attrTable">',
+            '<tr valign="top">', '<td class="attrName">${i18n.labels.address}</td>', '<td class="attrValue">${Address}</td>', '</tr>',
+            '<tr valign="top">', '<td class="attrName">${i18n.labels.neighborhood}</td>', '<td class="attrValue">${Neighborhood}</td>', '</tr>',
+            '<tr valign="top">', '<td class="attrName">${i18n.labels.city}</td>', '<td class="attrValue">${City}</td>', '</tr>',
+            '<tr valign="top">', '<td class="attrName">${i18n.labels.subregion}</td>', '<td class="attrValue">${SubRegion}</td>', '</tr>',
+            '<tr valign="top">', '<td class="attrName">${i18n.labels.region}</td>', '<td class="attrValue">${Region}</td>', '</tr>',
+            '<tr valign="top">', '<td class="attrName">${i18n.labels.postalCode}</td>', '<td class="attrValue">${Postal}&nbsp;${PostalExt}</td>', '</tr>',
+            '<tr valign="top">', '<td class="attrName">${i18n.labels.countryCode}</td>', '<td class="attrValue">${CountryCode}</td>', '</tr>',
+            '<tr valign="top">', '<td class="attrName">${i18n.labels.locatorName}</td>', '<td class="attrValue">${Loc_name}</td>', '</tr>',
+            '</table>'
+        ].join(''),
+
+        postCreate: function () {
+            this.inherited(arguments);
+            var options = lang.mixin({}, this.geocoderOptions, {
+                map: this.map
+            });
+            this.geocoder = new Geocoder(options, this.geocoderNode);
+
+            on(this.geocoder, 'select', lang.hitch(this, function (e) {
+                if (e.result) {
+                    this.show();
+                }
+            }));
+
+            if (this.collapsible) {
+                on(this.map, 'pan-start', lang.hitch(this, function () {
+                    this.hide();
+                }));
+                this.own(
+                    on(this.searchNode, a11yclick, lang.hitch(this, this.toggle))
+                );
+            } else {
+                this.expanded = true;
+            }
+            this.geocoder.startup();
+            if (this.expanded === true) {
+                this.show();
+            } else {
+                this.hide();
+            }
+            if (this.mapRightClickMenu) {
+                this.addRightClickMenu();
+            }
+            if (this.mapExtentSearch) {
+                this.geocoder.arcgisGeocoder.searchExtent = this.map.extent.getExtent();
+                this.map.on('extent-change', lang.hitch(this, function (evt) {
+                    this.geocoder.arcgisGeocoder.searchExtent = evt.extent;
+                }));
+            }
+        },
+        addRightClickMenu: function () {
+            this.map.on('MouseDown', lang.hitch(this, function (evt) {
+                this.mapRightClickPoint = evt.mapPoint;
+            }));
+            this.mapRightClickMenu.addChild(new MenuItem({
+                label: this.i18n.labels.getAddressHere,
+                onClick: lang.hitch(this, 'reverseGeocode')
+            }));
+            this.symbol = new SimpleMarkerSymbol();
+            this.infoTemplate = new InfoTemplate('Location', this.reverseGeocodeTemplate);
+            this.graphics = new GraphicsLayer({
+                id: 'reverseGeocode'
+            });
+            this.map.addLayer(this.graphics);
+        },
+        toggle: function () {
+            var display = domStyle.get(this.searchContainerNode, 'display');
+            if (display === 'block') {
+                this.hide();
+            } else {
+                this.show();
+            }
+        },
+        hide: function () {
+            domStyle.set(this.searchContainerNode, 'display', 'none');
+            domClass.remove(this.containerNode, 'open');
+            if (this.geocoder) {
+                this.geocoder.blur();
+            }
+        },
+        show: function () {
+            domStyle.set(this.searchContainerNode, 'display', 'block');
+            domClass.add(this.containerNode, 'open');
+            if (this.geocoder && !this.expanded) {
+                this.geocoder.focus();
+            }
+        },
+        reverseGeocode: function () {
+            this.geocoder._task.locationToAddress(this.mapRightClickPoint, 1000, lang.hitch(this, 'reverseGeocodeComplete'));
+        },
+        reverseGeocodeComplete: function (res) {
+            var graphic = new Graphic(res.location, this.symbol, res.address, this.infoTemplate);
+            this.graphics.add(graphic);
+
+            this.map.infoWindow.clearFeatures();
+            this.map.infoWindow.setTitle(graphic.getTitle());
+            this.map.infoWindow.setContent(graphic.getContent());
+            this.map.infoWindow.setFeatures([graphic]);
+
+            var screenPnt = this.map.toScreen(res.location);
+            this.map.infoWindow.show(screenPnt, this.map.getInfoWindowAnchor(screenPnt));
+            on.once(this.map.infoWindow, 'hide', lang.hitch(this, function () {
+                this.graphics.clear();
+            }));
+        }
+    });
+});

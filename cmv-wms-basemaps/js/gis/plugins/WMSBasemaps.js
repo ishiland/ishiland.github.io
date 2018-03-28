@@ -1,7 +1,130 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dijit/_WidgetsInTemplateMixin',
+    'dojo/_base/lang',
+    'dijit/DropDownMenu',
+    'dijit/MenuItem',
+    'dojo/_base/array',
+    'dojox/lang/functional',
+    'dojo/text!./WMSBasemaps/templates/WMSBasemaps.html',
+    'esri/dijit/BasemapGallery',
+    'dojo/i18n!./WMSBasemaps/nls/resource',
+    'dijit/form/DropDownButton',
+    'xstyle/css!./WMSBasemaps/css/WMSBasemaps.css'
+], function (declare, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, lang, DropDownMenu, MenuItem, array, functional, template, BasemapGallery, i18n) {
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dijit/_WidgetsInTemplateMixin","dojo/_base/lang","dijit/DropDownMenu","dijit/MenuItem","dojo/_base/array","dojox/lang/functional","dojo/text!./WMSBasemaps/templates/WMSBasemaps.html","esri/dijit/BasemapGallery","dojo/i18n!./WMSBasemaps/nls/resource","dijit/form/DropDownButton","xstyle/css!./WMSBasemaps/css/WMSBasemaps.css"],function(a,s,e,t,i,n,m,p,o,r,h,l){return a([s,e,t],{templateString:r,widgetsInTemplate:!0,i18n:l,mode:"",title:l.title,mapStartBasemap:"",basemapsToShow:[],validBasemaps:[],postCreate:function(){this.inherited(arguments),this.currentBasemap=this.mapStartBasemap||null,"custom"===this.mode&&(this.gallery=new h({map:this.map,showArcGISBasemaps:!1,basemaps:o.map(this.basemaps,function(a){return a.basemap})}),this.gallery.startup()),this.menu=new n({style:"display: none;"}),p.forEach(this.basemapsToShow,function(a){if(this.basemaps.hasOwnProperty(a)){var s=new m({id:a,label:this.basemaps[a].title,iconClass:a===this.mapStartBasemap?"selectedIcon":"emptyIcon",onClick:i.hitch(this,function(){var s=this.basemaps[this.currentBasemap],e=this.basemaps[a],t=this.map.extent,n=this.map;if(a!==this.currentBasemap){if(s.basemap&&s.basemap.layerInfos){var m=n.getLayer(s.basemap.id);n.removeLayer(m)}if(e.basemap&&e.basemap.layerInfos){e.basemap.initialExtent=t,e.basemap.spatialReferences=[t.spatialReference.latestWkid],n.addLayer(e.basemap,1);var o=n.getLayer(a);o.on("update-start",i.hitch(this,function(){this.dropDownButton.set("iconClass","fa fa-refresh fa-spin")})),o.on("update-end",i.hitch(this,function(){this.dropDownButton.set("iconClass","basemapsIcon")}))}else e.basemap||("agol"===this.mode?n.setBasemap(a):"custom"===this.mode&&this.gallery.select(a));this.currentBasemap=a;var r=this.menu.getChildren();p.forEach(r,function(s){s.id===a?s.set("iconClass","selectedIcon"):s.set("iconClass","emptyIcon")})}})});this.menu.addChild(s)}},this),this.dropDownButton.set("dropDown",this.menu)},startup:function(){this.inherited(arguments),"custom"===this.mode?this.map.getBasemap()!==this.mapStartBasemap&&this.gallery.select(this.mapStartBasemap):this.mapStartBasemap&&this.map.getBasemap()!==this.mapStartBasemap&&this.map.setBasemap(this.mapStartBasemap)}})});
-//# sourceMappingURL=WMSBasemaps.js.map
+    // main basemap widget
+    return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
+        templateString: template,
+        widgetsInTemplate: true,
+        i18n: i18n,
+        mode: '',
+        title: i18n.title,
+        mapStartBasemap: '',
+        basemapsToShow: [],
+        validBasemaps: [],
+        postCreate: function () {
+
+            this.inherited(arguments);
+
+            this.currentBasemap = this.mapStartBasemap || null;
+
+            if (this.mode === 'custom') {
+                this.gallery = new BasemapGallery({
+                    map: this.map,
+                    showArcGISBasemaps: false,
+                    basemaps: functional.map(this.basemaps, function (map) {
+                        return map.basemap;
+                    })
+                });
+                this.gallery.startup();
+            }
+
+            this.menu = new DropDownMenu({
+                style: 'display: none;'
+            });
+
+            array.forEach(this.basemapsToShow, function (basemap) {
+
+                if (this.basemaps.hasOwnProperty(basemap)) {
+                    var menuItem = new MenuItem({
+                        id: basemap,
+                        label: this.basemaps[basemap].title,
+                        iconClass: (basemap === this.mapStartBasemap) ? 'selectedIcon' : 'emptyIcon',
+                        onClick: lang.hitch(this, function () {
+
+                            var currentBasemap = this.basemaps[this.currentBasemap];
+
+                            var selectedBasemap = this.basemaps[basemap];
+
+                            var extent = this.map.extent;
+
+                            var map = this.map;
+
+                            if (basemap !== this.currentBasemap) {
+
+                                //remove if WMS layer is current layer
+                                if (currentBasemap.basemap && currentBasemap.basemap.layerInfos) {
+                                    var layer = map.getLayer(currentBasemap.basemap.id);
+                                    map.removeLayer(layer);
+                                }
+                                if (selectedBasemap.basemap && selectedBasemap.basemap.layerInfos) {
+                                    selectedBasemap.basemap.initialExtent = extent;
+                                    // need to set spatialReferences of wms layer right before adding to map
+                                    selectedBasemap.basemap.spatialReferences = [extent.spatialReference.latestWkid];
+                                    map.addLayer(selectedBasemap.basemap, 1);
+
+                                    var newLayer = map.getLayer(basemap);
+
+                                    newLayer.on('update-start', lang.hitch(this, function () {
+                                        this.dropDownButton.set('iconClass', 'fa fa-refresh fa-spin');
+                                    }));
+
+                                    newLayer.on('update-end', lang.hitch(this, function () {
+                                        this.dropDownButton.set('iconClass', 'basemapsIcon');
+                                    }));
+                                } else if (!selectedBasemap.basemap) {
+                                    if (this.mode === 'agol') {
+                                        map.setBasemap(basemap);
+                                    } else if (this.mode === 'custom') {
+                                        this.gallery.select(basemap);
+                                    }
+                                }
+
+                                this.currentBasemap = basemap;
+
+                                var ch = this.menu.getChildren();
+                                array.forEach(ch, function (c) {
+                                    if (c.id === basemap) {
+                                        c.set('iconClass', 'selectedIcon');
+                                    } else {
+                                        c.set('iconClass', 'emptyIcon');
+                                    }
+                                });
+                            }
+                        })
+                    });
+                    this.menu.addChild(menuItem);
+                }
+            }, this);
+
+            this.dropDownButton.set('dropDown', this.menu);
+        },
+        startup: function () {
+            this.inherited(arguments);
+            if (this.mode === 'custom') {
+                if (this.map.getBasemap() !== this.mapStartBasemap) { //based off the title of custom basemaps in viewer.js config
+                    this.gallery.select(this.mapStartBasemap);
+                }
+            } else if (this.mapStartBasemap && (this.map.getBasemap() !== this.mapStartBasemap)) {
+                // if (this.mapStartBasemap && (this.map.getBasemap() !== this.mapStartBasemap)) {
+                // if (this.map.getBasemap() !== this.mapStartBasemap) { //based off the agol basemap name
+                this.map.setBasemap(this.mapStartBasemap);
+                // }
+                // }
+            }
+        }
+    });
+});

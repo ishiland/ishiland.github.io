@@ -1,7 +1,254 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'dojo/on',
+    'dojo/dom',
+    'dojo/_base/array',
+    'dojo/Deferred',
 
-define(["dojo/_base/declare","dojo/_base/lang","dojo/on","dojo/dom","dojo/_base/array","dojo/Deferred","esri/map","esri/IdentityManager"],function(e,r,i,t,a,s,n){return e(null,{postConfig:function(){return this.mapDeferred=new s,this.inherited(arguments)},startup:function(){this.inherited(arguments),this.layoutDeferred.then(r.hitch(this,"initMapAsync"))},initMapAsync:function(){var e=new s,i=[];return this.createMap(i).then(r.hitch(this,"_createMapResult",e,i)),e.then(r.hitch(this,"initMapComplete")),e},createMap:function(e){var r=this.inherited(arguments);if(r)return r;var i=new s,a=t.byId(this.config.layout.map)||"mapCenter";this.map=new n(a,this.config.mapOptions);var o=this.inherited(arguments);return o?o.then(function(r){r&&(e=e.concat(r)),i.resolve(e)}):i.resolve(e),i},_createMapResult:function(e,t){return this.map?(!this.config.webMapId&&this.config.mapOptions&&this.config.mapOptions.basemap?this.map.on("load",r.hitch(this,"_initLayers",t)):this._initLayers(t),this.config.operationalLayers&&this.config.operationalLayers.length>0?i.once(this.map,"layers-add-result",r.hitch(this,"_onLayersAddResult",e,t)):e.resolve(t)):e.resolve(t),e},_onLayersAddResult:function(e,r,i){a.forEach(i.layers,function(e){!0!==e.success&&r.push(e.error)},this),e.resolve(r)},_initLayers:function(e){this.layers=[];var i={csv:"esri/layers/CSVLayer",dataadapter:"esri/layers/DataAdapterFeatureLayer",dynamic:"esri/layers/ArcGISDynamicMapServiceLayer",feature:"esri/layers/FeatureLayer",georss:"esri/layers/GeoRSSLayer",graphics:"esri/layers/GraphicsLayer",image:"esri/layers/ArcGISImageServiceLayer",imagevector:"esri/layers/ArcGISImageServiceVectorLayer",kml:"esri/layers/KMLLayer",mapimage:"esri/layers/MapImageLayer",osm:"esri/layers/OpenStreetMapLayer",raster:"esri/layers/RasterLayer",stream:"esri/layers/StreamLayer",tiled:"esri/layers/ArcGISTiledMapServiceLayer",vectortile:"esri/layers/VectorTileLayer",webtiled:"esri/layers/WebTiledLayer",wfs:"esri/layers/WFSLayer",wms:"esri/layers/WMSLayer",wmts:"esri/layers/WMTSLayer"};i=r.mixin(i,this.config.layerTypes||{});var t=[];a.forEach(this.config.operationalLayers,function(r){var a=i[r.type];a?t.push(a):e.push('Layer type "'+r.type+'" is not supported: ')},this),require(t,r.hitch(this,function(){a.forEach(this.config.operationalLayers,function(e){var t=i[e.type];t&&require([t],r.hitch(this,"_initLayer",e))},this),this.map.addLayers(this.layers)}))},_initLayer:function(e,i){var t;t=e.url?new i(e.url,e.options):new i(e.options),this.layers.unshift(t);var a=!1;if(void 0!==e.legendLayerInfos&&void 0!==e.legendLayerInfos.exclude&&(a=e.legendLayerInfos.exclude),!a){var s={};void 0!==e.legendLayerInfos&&void 0!==e.legendLayerInfos.layerInfo&&(s=e.legendLayerInfos.layerInfo);var n=r.mixin({layer:t,title:e.title||null},s);this.legendLayerInfos.unshift(n)}if(this.layerControlLayerInfos.unshift({layer:t,type:e.type,title:e.title,controlOptions:e.layerControlLayerInfos}),"feature"===e.type){var o={featureLayer:t};e.editorLayerInfos&&r.mixin(o,e.editorLayerInfos),!0!==o.exclude&&this.editorLayerInfos.push(o)}if("dynamic"===e.type||"feature"===e.type){var y={layer:t,title:e.title};e.identifyLayerInfos&&r.mixin(y,e.identifyLayerInfos),!0!==y.exclude&&this.identifyLayerInfos.push(y)}},initMapComplete:function(e){e&&e.length>0&&this.handleError({source:"Controller",error:e.join(", ")}),this.map&&(this.map.on("resize",function(e){var r=e.target.extent.getCenter();setTimeout(function(){e.target.centerAt(r)},100)}),this.mapDeferred.resolve(this.map))},initMapError:function(e){this.handleError({source:"Controller",error:e})},resizeMap:function(){this.map&&this.map.resize()},getMapHeight:function(){return this.map?this.map.height:0}})});
-//# sourceMappingURL=_MapMixin.js.map
+    'esri/map',
+
+    'esri/IdentityManager'
+
+], function (
+    declare,
+    lang,
+    on,
+    dom,
+    array,
+    Deferred,
+
+    Map
+) {
+
+    return declare(null, {
+
+        postConfig: function () {
+            this.mapDeferred = new Deferred();
+            return this.inherited(arguments);
+        },
+
+        startup: function () {
+            this.inherited(arguments);
+            this.layoutDeferred.then(lang.hitch(this, 'initMapAsync'));
+        },
+
+        initMapAsync: function () {
+            var returnDeferred = new Deferred();
+            var returnWarnings = [];
+
+            this.createMap(returnWarnings).then(
+                lang.hitch(this, '_createMapResult', returnDeferred, returnWarnings)
+            );
+            returnDeferred.then(lang.hitch(this, 'initMapComplete'));
+            return returnDeferred;
+        },
+
+        createMap: function (returnWarnings) {
+
+            // mixins override the default createMap method and return a deferred
+            var result = this.inherited(arguments);
+            if (result) {
+                return result;
+            }
+
+            // otherwise we can create the map
+            var mapDeferred = new Deferred(),
+                container = dom.byId(this.config.layout.map) || 'mapCenter';
+
+            this.map = new Map(container, this.config.mapOptions);
+
+            // let some other mixins modify or add map items async
+            var wait = this.inherited(arguments);
+            if (wait) {
+                wait.then(function (warnings) {
+                    if (warnings) {
+                        returnWarnings = returnWarnings.concat(warnings);
+                    }
+                    mapDeferred.resolve(returnWarnings);
+                });
+            } else {
+                mapDeferred.resolve(returnWarnings);
+            }
+            return mapDeferred;
+        },
+
+        _createMapResult: function (returnDeferred, returnWarnings) {
+            if (this.map) {
+                if (!this.config.webMapId && this.config.mapOptions && this.config.mapOptions.basemap) {
+                    this.map.on('load', lang.hitch(this, '_initLayers', returnWarnings));
+                } else {
+                    this._initLayers(returnWarnings);
+                }
+
+                if (this.config.operationalLayers && this.config.operationalLayers.length > 0) {
+                    on.once(this.map, 'layers-add-result', lang.hitch(this, '_onLayersAddResult', returnDeferred, returnWarnings));
+                } else {
+                    returnDeferred.resolve(returnWarnings);
+                }
+            } else {
+                returnDeferred.resolve(returnWarnings);
+            }
+            return returnDeferred;
+        },
+
+        _onLayersAddResult: function (returnDeferred, returnWarnings, lyrsResult) {
+            array.forEach(lyrsResult.layers, function (addedLayer) {
+                if (addedLayer.success !== true) {
+                    returnWarnings.push(addedLayer.error);
+                }
+            }, this);
+            returnDeferred.resolve(returnWarnings);
+        },
+
+        _initLayers: function (returnWarnings) {
+            this.layers = [];
+            var layerTypes = {
+                csv: 'esri/layers/CSVLayer',
+                dataadapter: 'esri/layers/DataAdapterFeatureLayer', //untested
+                dynamic: 'esri/layers/ArcGISDynamicMapServiceLayer',
+                feature: 'esri/layers/FeatureLayer',
+                georss: 'esri/layers/GeoRSSLayer',
+                graphics: 'esri/layers/GraphicsLayer',
+                image: 'esri/layers/ArcGISImageServiceLayer',
+                imagevector: 'esri/layers/ArcGISImageServiceVectorLayer',
+                kml: 'esri/layers/KMLLayer',
+                mapimage: 'esri/layers/MapImageLayer', //untested
+                osm: 'esri/layers/OpenStreetMapLayer',
+                raster: 'esri/layers/RasterLayer',
+                stream: 'esri/layers/StreamLayer',
+                tiled: 'esri/layers/ArcGISTiledMapServiceLayer',
+                vectortile: 'esri/layers/VectorTileLayer',
+                webtiled: 'esri/layers/WebTiledLayer',
+                wfs: 'esri/layers/WFSLayer',
+                wms: 'esri/layers/WMSLayer',
+                wmts: 'esri/layers/WMTSLayer' //untested
+            };
+            // add any user-defined layer types such as https://github.com/Esri/geojson-layer-js
+            layerTypes = lang.mixin(layerTypes, this.config.layerTypes || {});
+            // loading all the required modules first ensures the layer order is maintained
+            var modules = [];
+            array.forEach(this.config.operationalLayers, function (layer) {
+                var type = layerTypes[layer.type];
+                if (type) {
+                    modules.push(type);
+                } else {
+                    returnWarnings.push('Layer type "' + layer.type + '" is not supported: ');
+                }
+            }, this);
+
+            require(modules, lang.hitch(this, function () {
+                array.forEach(this.config.operationalLayers, function (layer) {
+                    var type = layerTypes[layer.type];
+                    if (type) {
+                        require([type], lang.hitch(this, '_initLayer', layer));
+                    }
+                }, this);
+                this.map.addLayers(this.layers);
+            }));
+        },
+
+        _initLayer: function (layer, Layer) {
+            var l;
+            if (layer.url) {
+                l = new Layer(layer.url, layer.options);
+            } else {
+                l = new Layer(layer.options);
+            }
+            this.layers.unshift(l); //unshift instead of push to keep layer ordering on map intact
+
+            //Legend LayerInfos array
+            var excludeLayerFromLegend = false;
+            if (typeof layer.legendLayerInfos !== 'undefined' && typeof layer.legendLayerInfos.exclude !== 'undefined') {
+                excludeLayerFromLegend = layer.legendLayerInfos.exclude;
+            }
+            if (!excludeLayerFromLegend) {
+                var configuredLayerInfo = {};
+                if (typeof layer.legendLayerInfos !== 'undefined' && typeof layer.legendLayerInfos.layerInfo !== 'undefined') {
+                    configuredLayerInfo = layer.legendLayerInfos.layerInfo;
+                }
+                var layerInfo = lang.mixin({
+                    layer: l,
+                    title: layer.title || null
+                }, configuredLayerInfo);
+                this.legendLayerInfos.unshift(layerInfo); //unshift instead of push to keep layer ordering in legend intact
+            }
+
+            //LayerControl LayerInfos array
+            this.layerControlLayerInfos.unshift({ //unshift instead of push to keep layer ordering in LayerControl intact
+                layer: l,
+                type: layer.type,
+                title: layer.title,
+                controlOptions: layer.layerControlLayerInfos
+            });
+
+            if (layer.type === 'feature') {
+                var options = {
+                    featureLayer: l
+                };
+                if (layer.editorLayerInfos) {
+                    lang.mixin(options, layer.editorLayerInfos);
+                }
+                if (options.exclude !== true) {
+                    this.editorLayerInfos.push(options);
+                }
+            }
+
+            if (layer.type === 'dynamic' || layer.type === 'feature') {
+                var idOptions = {
+                    layer: l,
+                    title: layer.title
+                };
+                if (layer.identifyLayerInfos) {
+                    lang.mixin(idOptions, layer.identifyLayerInfos);
+                }
+                if (idOptions.exclude !== true) {
+                    this.identifyLayerInfos.push(idOptions);
+                }
+            }
+        },
+        initMapComplete: function (warnings) {
+            if (warnings && warnings.length > 0) {
+                this.handleError({
+                    source: 'Controller',
+                    error: warnings.join(', ')
+                });
+            }
+
+            if (this.map) {
+
+                this.map.on('resize', function (evt) {
+                    var pnt = evt.target.extent.getCenter();
+                    setTimeout(function () {
+                        evt.target.centerAt(pnt);
+                    }, 100);
+                });
+
+                // resolve the map deferred
+                this.mapDeferred.resolve(this.map);
+            }
+
+        },
+
+        initMapError: function (err) {
+            this.handleError({
+                source: 'Controller',
+                error: err
+            });
+        },
+
+        resizeMap: function () {
+            if (this.map) {
+                this.map.resize();
+            }
+        },
+
+        getMapHeight: function () {
+            if (this.map) {
+                return this.map.height;
+            } else {
+                return 0;
+            }
+        }
+    });
+});

@@ -1,7 +1,187 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dojo/_base/lang","dojo/on","dojo/dom-style","dojo/_base/array","dojo/_base/kernel","dojo/io-query","dijit/form/DropDownButton","dijit/DropDownMenu","dijit/MenuItem","./Locale/countries","dojo/text!./Locale/templates/Locale.html","dojo/i18n!./Locale/nls/resource","xstyle/css!flag-icon-css/css/flag-icon.min.css","xstyle/css!./Locale/css/Locale.css"],function(e,s,o,a,i,n,t,l,c,r,d,u,h,g,p){return e([s,o],{templateString:g,i18n:p,baseClass:"cmvLocaleDijit",currentLocale:null,includeFlag:!0,includeCountry:!0,includeLanguage:!0,languages:{en:"English",es:"Español",fr:"Français",pt:"Português"},locales:["es-ar","es-bo","pt-br","en-ca","fr-ca","es-cl","es-co","es-cr","es-do","es-ec","es-sv","fr-FR","es-gt","fr-ht","es-hn","en-in","es-mx","es-pa","es-pe","es-pr","pt-pt","es-py","es-es","en-gb","en-us","es-us","es-uy","es-ve"],postCreate:function(){this.inherited(arguments),this.currentLocale=l.locale,this.parentWidget&&this.parentWidget.toggleable&&n.set(this.localeLabelContainer,"display","block");var e=new d({baseClass:"localeMenu"});t.forEach(this.locales,a.hitch(this,function(s){var o=s.split("-"),i=this.languages[o[0]];if(i){var n="",t=null,l=null;o[1]&&(this.includeFlag&&(l="flag-icon flag-icon-"+o[1].toLowerCase()),(t=h[o[1].toUpperCase()])&&this.includeCountry&&(n=t)),this.includeLanguage&&(n.length>0&&(n+=" - "),n+=i);var c=new u({id:s,label:n,iconClass:l,onClick:a.hitch(this,"switchLocale",s)});e.addChild(c)}})),e.startup();var s=this.currentLocale.split("-"),o=this.languages[s[0]],i="",c=null;s[1]&&(this.includeFlag&&(i='<div class="flag-icon flag-icon-'+s[1].toLowerCase()+'"></div>'),(c=h[s[1].toUpperCase()])&&this.includeCountry&&(i+=c),this.includeLanguage&&(c&&this.includeCountry&&(i+=" - "),i+=o));var g=new r({label:i,dropDown:e});this.localeDropDownContainer.appendChild(g.domNode)},switchLocale:function(e){if(e!==this.currentLocale){var s=window.location.href,o={};if(s.indexOf("?")>-1){var a=s.substring(s.indexOf("?")+1,s.length);o=c.queryToObject(a)}o.locale=e,window.location=window.location.pathname+"?"+c.objectToQuery(o)}}})});
-//# sourceMappingURL=Locale.js.map
+    'dojo/_base/lang',
+    'dojo/on',
+    'dojo/dom-style',
+    'dojo/_base/array',
+    'dojo/_base/kernel',
+    'dojo/io-query',
+
+    'dijit/form/DropDownButton',
+    'dijit/DropDownMenu',
+    'dijit/MenuItem',
+
+    './Locale/countries',
+
+    'dojo/text!./Locale/templates/Locale.html',
+    'dojo/i18n!./Locale/nls/resource',
+
+    'xstyle/css!flag-icon-css/css/flag-icon.min.css',
+    'xstyle/css!./Locale/css/Locale.css'
+], function (
+    declare,
+    _WidgetBase,
+    _TemplatedMixin,
+
+    lang,
+    on,
+    domStyle,
+    array,
+    kernel,
+    ioQuery,
+
+    DropDownButton,
+    DropDownMenu,
+    MenuItem,
+
+    countries,
+
+    template,
+    i18n
+) {
+
+    return declare([_WidgetBase, _TemplatedMixin], {
+        templateString: template,
+        i18n: i18n,
+        baseClass: 'cmvLocaleDijit',
+
+        currentLocale: null,
+
+        includeFlag: true,
+        includeCountry: true,
+        includeLanguage: true,
+
+        languages: {
+            'en': 'English',
+            'es': 'Español',
+            'fr': 'Français',
+            'pt': 'Português'
+        },
+
+        locales: [
+            'es-ar',
+            'es-bo',
+            'pt-br',
+            'en-ca',
+            'fr-ca',
+            'es-cl',
+            'es-co',
+            'es-cr',
+            'es-do',
+            'es-ec',
+            'es-sv',
+            'fr-FR',
+            'es-gt',
+            'fr-ht',
+            'es-hn',
+            'en-in',
+            'es-mx',
+            'es-pa',
+            'es-pe',
+            'es-pr',
+            'pt-pt',
+            'es-py',
+            'es-es',
+            'en-gb',
+            'en-us',
+            'es-us',
+            'es-uy',
+            'es-ve'
+        ],
+
+        postCreate: function () {
+            this.inherited(arguments);
+
+            this.currentLocale = kernel.locale;
+
+            if (this.parentWidget) {
+                if (this.parentWidget.toggleable) {
+                    domStyle.set(this.localeLabelContainer, 'display', 'block');
+                }
+            }
+
+            var menu = new DropDownMenu({
+                baseClass: 'localeMenu'
+            });
+
+            array.forEach(this.locales, lang.hitch(this, function (locale) {
+                var vals = locale.split('-');
+
+                // only include supported languages
+                var language = this.languages[vals[0]];
+                if (language) {
+                    var label = '', country = null, icon = null;
+                    if (vals[1]) {
+                        if (this.includeFlag) {
+                            icon = 'flag-icon flag-icon-' + vals[1].toLowerCase();
+                        }
+                        country = countries[vals[1].toUpperCase()];
+                        if (country && this.includeCountry) {
+                            label = country;
+                        }
+                    }
+                    if (this.includeLanguage) {
+                        if (label.length > 0) {
+                            label += ' - ';
+                        }
+                        label += language;
+                    }
+                    var menuItem = new MenuItem({
+                        id: locale,
+                        label: label,
+                        iconClass: icon,
+                        onClick: lang.hitch(this, 'switchLocale', locale)
+                    });
+                    menu.addChild(menuItem);
+                }
+            }));
+            menu.startup();
+
+            var vals = this.currentLocale.split('-');
+            var language = this.languages[vals[0]];
+            var label = '', country = null;
+            if (vals[1]) {
+                if (this.includeFlag) {
+                    label = '<div class="flag-icon flag-icon-' + vals[1].toLowerCase() + '"></div>';
+                }
+                country = countries[vals[1].toUpperCase()];
+                if (country && this.includeCountry) {
+                    label += country;
+                }
+                if (this.includeLanguage) {
+                    if (country && this.includeCountry) {
+                        label += ' - ';
+                    }
+                    label += language;
+                }
+            }
+
+            var button = new DropDownButton({
+                label: label,
+                dropDown: menu
+            });
+
+            this.localeDropDownContainer.appendChild(button.domNode);
+        },
+
+        switchLocale: function (newLocale) {
+            if (newLocale !== this.currentLocale) {
+                var uri = window.location.href, qsObj = {};
+                if (uri.indexOf('?') > -1) {
+                    var qs = uri.substring(uri.indexOf('?') + 1, uri.length);
+                    qsObj = ioQuery.queryToObject(qs);
+                }
+
+                // set the new locale
+                qsObj.locale = newLocale;
+
+                // reload the page
+                window.location = window.location.pathname + '?' + ioQuery.objectToQuery(qsObj);
+
+            }
+        }
+    });
+});

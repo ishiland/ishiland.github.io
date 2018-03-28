@@ -1,7 +1,173 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dojo/_base/lang","dojo/_base/array","dojo/query","dojo/dom-class","dojo/dom-geometry","dojo/on","dojo/aspect","dijit/registry","put-selector/put","viewer/sidebar/SidebarTab","dojo/text!./templates/Sidebar.html","xstyle/css!./css/Sidebar.css","dojo/NodeList-traverse"],function(t,e,i,o,n,s,a,d,r,h,c,l,b,p){return t([e,i],{templateString:p,baseClass:"sidebar",viewPadding:{top:0,left:0,right:0,bottom:0},showCloseIcon:!0,collapseSyncNode:null,postCreate:function(){this.inherited(arguments),this.tabs=[],this.collapseSyncNode&&(a.contains(this.domNode,"collapsed")&&l(this.mapContainer,".sidebar-collapsed"),r(this.collapseSyncNode,"transitionend, oTransitionEnd, webkitTransitionEnd, animationend, webkitAnimationEnd",o.hitch(this,"_setViewPadding"))),h.before(this.map,"setExtent",o.hitch(this,"_viewPaddingHandler")),r(this.domNode,"transitionend, oTransitionEnd, webkitTransitionEnd, animationend, webkitAnimationEnd",o.hitch(this,"_resizeActiveTab")),r(window,"resize",o.hitch(this,function(){window.setTimeout(o.hitch(this,"_resizeActiveTab"),300)}))},createTab:function(t){(t=t||{}).open=t.open||!1,t.baseClass=this.baseClass,t.showCloseIcon=this.showCloseIcon,t.tabsContainerNode=this.tabsContainerNode,t.tabsButtonNode=this.tabsButtonNode;var e=new b(t);return e.watch("open",o.hitch(this,"checkTabs",e)),t.open&&e.openTab(),this.tabs.push(e),e},checkTabs:function(t){n.forEach(this.tabs,function(e){e.get("id")!==t.get("id")&&e.closeTab(!0)}),t.get("open")?(a.add(this.tabsButtonNode,"active"),a.remove(this.domNode,"collapsed"),a.remove(this.mapContainer,"sidebar-collapsed")):(a.remove(this.tabsButtonNode,"active"),a.add(this.domNode,"collapsed"),a.add(this.mapContainer,"sidebar-collapsed"))},_setViewPadding:function(){var t=d.getContentBox(this.domNode);this.viewPadding={top:0,left:t.w+t.l,right:0,bottom:0},this._viewPaddingHandler(this.map.extent)},_viewPaddingHandler:function(t){var e=this.map,i=this.viewPadding,o=e.width-i.left-i.right,n=e.height-i.top-i.bottom,s=Math.max(t.getWidth()/o,t.getHeight()/n),a=t.getCenter(),d=e.extent.expand(s/(e.extent.getWidth()/e.width));return d=d.centerAt({x:a.x-.5*(i.left-i.right)*s,y:a.y-.5*(i.top-i.bottom)*s}),[d]},_resizeActiveTab:function(){var t=n.filter(this.tabs,function(t){return a.contains(t.contentNode,"active")});if(t&&t.length>0){var e=s(t[0].contentNode);this._resizeWidgetsInNodeList(e);var i=e.children();this._resizeWidgetsInNodeList(i)}},_resizeWidgetsInNodeList:function(t){n.forEach(t,function(t){var e=c.findWidgets(t);n.forEach(e,function(t){t.resize&&"function"==typeof t.resize&&window.setTimeout(function(){t.resize()},50)})})}})});
-//# sourceMappingURL=Sidebar.js.map
+    'dojo/_base/lang',
+    'dojo/_base/array',
+    'dojo/query',
+    'dojo/dom-class',
+    'dojo/dom-geometry',
+    'dojo/on',
+    'dojo/aspect',
+
+    'dijit/registry',
+
+    'put-selector/put',
+
+    'viewer/sidebar/SidebarTab',
+
+    'dojo/text!./templates/Sidebar.html',
+
+    'xstyle/css!./css/Sidebar.css',
+
+    'dojo/NodeList-traverse'
+
+], function (
+    declare,
+    _WidgetBase,
+    _TemplatedMixin,
+
+    lang,
+    array,
+    query,
+    domClass,
+    domGeom,
+    on,
+    aspect,
+
+    registry,
+
+    put,
+
+    SidebarTab,
+
+    template
+) {
+    return declare([_WidgetBase, _TemplatedMixin], {
+        templateString: template,
+        baseClass: 'sidebar',
+
+        viewPadding: {
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+        },
+
+        showCloseIcon: true,
+
+        collapseSyncNode: null,
+
+        postCreate: function () {
+            this.inherited(arguments);
+
+            this.tabs = [];
+            if (this.collapseSyncNode) {
+                if (domClass.contains(this.domNode, 'collapsed')) {
+                    put(this.mapContainer, '.sidebar-collapsed');
+                }
+                //wire up css transition callback covering all event name bases
+                on(this.collapseSyncNode, 'transitionend, oTransitionEnd, webkitTransitionEnd, animationend, webkitAnimationEnd', lang.hitch(this, '_setViewPadding'));
+            }
+            aspect.before(this.map, 'setExtent', lang.hitch(this, '_viewPaddingHandler'));
+
+            // resize tab and any widgets within the tab when it is opened
+            on(this.domNode, 'transitionend, oTransitionEnd, webkitTransitionEnd, animationend, webkitAnimationEnd', lang.hitch(this, '_resizeActiveTab'));
+
+            // resize tab and any widgets within the tab when the browser is resized
+            on(window, 'resize', lang.hitch(this, function () {
+                window.setTimeout(lang.hitch(this, '_resizeActiveTab'), 300); // 300ms to wait for the animation to complete
+            }));
+
+        },
+
+        createTab: function (options) {
+            options = options || {};
+            options.open = options.open || false;
+            options.baseClass = this.baseClass;
+            options.showCloseIcon = this.showCloseIcon;
+            options.tabsContainerNode = this.tabsContainerNode;
+            options.tabsButtonNode = this.tabsButtonNode;
+
+            var tab = new SidebarTab(options);
+            tab.watch('open', lang.hitch(this, 'checkTabs', tab));
+            if (options.open) {
+                tab.openTab();
+            }
+
+            this.tabs.push(tab);
+            return tab;
+        },
+
+        checkTabs: function (tab) {
+            array.forEach(this.tabs, function (childTab) {
+                if (childTab.get('id') !== tab.get('id')) {
+                    childTab.closeTab(true);
+                }
+            });
+            if (tab.get('open')) {
+                domClass.add(this.tabsButtonNode, 'active');
+                domClass.remove(this.domNode, 'collapsed');
+                domClass.remove(this.mapContainer, 'sidebar-collapsed');
+            } else {
+                domClass.remove(this.tabsButtonNode, 'active');
+                domClass.add(this.domNode, 'collapsed');
+                domClass.add(this.mapContainer, 'sidebar-collapsed');
+            }
+        },
+
+        _setViewPadding: function () {
+            var dims = domGeom.getContentBox(this.domNode);
+            this.viewPadding = {
+                top: 0,
+                left: dims.w + dims.l,
+                right: 0,
+                bottom: 0
+            };
+            this._viewPaddingHandler(this.map.extent);
+        },
+
+        _viewPaddingHandler: function (extent) {
+            var map = this.map,
+                vp = this.viewPadding,
+                w = map.width - vp.left - vp.right,
+                h = map.height - vp.top - vp.bottom,
+                res = Math.max(extent.getWidth() / w, extent.getHeight() / h),
+                center = extent.getCenter(),
+                result = map.extent.expand(res / (map.extent.getWidth() / map.width));
+            result = result.centerAt({
+                x: center.x - (vp.left - vp.right) * 0.5 * res,
+                y: center.y - (vp.top - vp.bottom) * 0.5 * res
+            });
+            return [result];
+        },
+
+        _resizeActiveTab: function () {
+            var childTabs = array.filter(this.tabs, function (tab) {
+                return domClass.contains(tab.contentNode, 'active');
+            });
+            if (childTabs && childTabs.length > 0) {
+                var contentNode = query(childTabs[0].contentNode);
+                this._resizeWidgetsInNodeList(contentNode);
+                var children = contentNode.children();
+                this._resizeWidgetsInNodeList(children);
+            }
+        },
+
+        _resizeWidgetsInNodeList: function (nodes) {
+            array.forEach(nodes, function (node) {
+                // resize any widgets
+                var childWidgets = registry.findWidgets(node);
+                array.forEach(childWidgets, function (widget) {
+                    if (widget.resize && typeof(widget.resize) === 'function') {
+                        window.setTimeout(function () {
+                            widget.resize();
+                        }, 50);
+                    }
+                });
+
+            });
+        }
+    });
+});

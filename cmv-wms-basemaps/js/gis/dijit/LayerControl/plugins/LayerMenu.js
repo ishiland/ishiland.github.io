@@ -1,7 +1,123 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
-
-define(["dojo/_base/declare","dijit/Menu","dijit/MenuItem","dijit/PopupMenuItem","dijit/MenuSeparator","./Transparency","dojo/i18n!./../nls/resource"],function(e,n,o,a,l,r,i){return e(n,{control:null,_removed:!1,postCreate:function(){this.inherited(arguments);var e=this.control,d=e.layer,t=e.controlOptions,c=e.controller,p=e._layerType,w=this;if(("vector"===p&&c.vectorReorder||"overlay"===p&&c.overlayReorder)&&(e._reorderUp=new o({label:i.moveUp,onClick:function(){c._moveUp(e)}}),w.addChild(e._reorderUp),e._reorderDown=new o({label:i.moveDown,onClick:function(){c._moveDown(e)}}),w.addChild(e._reorderDown),w.addChild(new l)),e._dynamicToggleMenuItems&&e._dynamicToggleMenuItems(w),(!0!==t.noZoom&&!0!==c.noZoom||!0===c.noZoom&&!1===t.noZoom)&&w.addChild(new o({label:i.zoomTo,onClick:function(){c._zoomToLayer(d)}})),(!0!==t.noTransparency&&!0!==c.noTransparency||!0===c.noTransparency&&!1===t.noTransparency)&&w.addChild(new r({label:i.transparency,layer:d})),!0===t.swipe||!0===c.swipe&&!1!==t.swipe){var s=new n;s.addChild(new o({label:i.layerSwipeVertical,onClick:function(){c._swipeLayer(d,"vertical")}})),s.addChild(new o({label:i.layerSwipeHorizontal,onClick:function(){c._swipeLayer(d,"horizontal")}})),!0===t.swipeScope&&s.addChild(new o({label:i.layerSwipeScope,onClick:function(){c._swipeLayer(d,"scope")}})),w.addChild(new a({label:i.layerSwipe,popup:s}))}!0===t.metadataUrl&&d.url&&(w.addChild(new l),w.addChild(new o({label:i.metadata,onClick:function(){window.open(d.url,"_blank")}}))),t.metadataUrl&&"string"==typeof t.metadataUrl&&(w.addChild(new l),w.addChild(new o({label:i.metadata,onClick:function(){window.open(t.metadataUrl,"_blank")}})));var C=w.getChildren()[w.getChildren().length-1];C&&C.isInstanceOf(l)&&w.removeChild(C)}})});
-//# sourceMappingURL=LayerMenu.js.map
+define([
+    'dojo/_base/declare',
+    'dijit/Menu',
+    'dijit/MenuItem',
+    'dijit/PopupMenuItem',
+    'dijit/MenuSeparator',
+    './Transparency',
+    'dojo/i18n!./../nls/resource'
+], function (
+    declare,
+    Menu,
+    MenuItem,
+    PopupMenuItem,
+    MenuSeparator,
+    Transparency,
+    i18n
+) {
+    return declare(Menu, {
+        control: null,
+        _removed: false, //for future use
+        postCreate: function () {
+            this.inherited(arguments);
+            var control = this.control,
+                layer = control.layer,
+                controlOptions = control.controlOptions,
+                controller = control.controller,
+                layerType = control._layerType,
+                self = this;
+            //reorder menu items
+            if ((layerType === 'vector' && controller.vectorReorder) || (layerType === 'overlay' && controller.overlayReorder)) {
+                control._reorderUp = new MenuItem({
+                    label: i18n.moveUp,
+                    onClick: function () {
+                        controller._moveUp(control);
+                    }
+                });
+                self.addChild(control._reorderUp);
+                control._reorderDown = new MenuItem({
+                    label: i18n.moveDown,
+                    onClick: function () {
+                        controller._moveDown(control);
+                    }
+                });
+                self.addChild(control._reorderDown);
+                self.addChild(new MenuSeparator());
+            }
+            // toggle all dynamic sublayers
+            if (control._dynamicToggleMenuItems) {
+                control._dynamicToggleMenuItems(self);
+            }
+            //zoom to layer
+            if ((controlOptions.noZoom !== true && controller.noZoom !== true) || (controller.noZoom === true && controlOptions.noZoom === false)) {
+                self.addChild(new MenuItem({
+                    label: i18n.zoomTo,
+                    onClick: function () {
+                        controller._zoomToLayer(layer);
+                    }
+                }));
+            }
+            //transparency
+            if ((controlOptions.noTransparency !== true && controller.noTransparency !== true) || (controller.noTransparency === true && controlOptions.noTransparency === false)) {
+                self.addChild(new Transparency({
+                    label: i18n.transparency,
+                    layer: layer
+                }));
+            }
+            //layer swipe
+            if (controlOptions.swipe === true || (controller.swipe === true && controlOptions.swipe !== false)) {
+                var swipeMenu = new Menu();
+                swipeMenu.addChild(new MenuItem({
+                    label: i18n.layerSwipeVertical,
+                    onClick: function () {
+                        controller._swipeLayer(layer, 'vertical');
+                    }
+                }));
+                swipeMenu.addChild(new MenuItem({
+                    label: i18n.layerSwipeHorizontal,
+                    onClick: function () {
+                        controller._swipeLayer(layer, 'horizontal');
+                    }
+                }));
+                if (controlOptions.swipeScope === true) {
+                    swipeMenu.addChild(new MenuItem({
+                        label: i18n.layerSwipeScope,
+                        onClick: function () {
+                            controller._swipeLayer(layer, 'scope');
+                        }
+                    }));
+                }
+                self.addChild(new PopupMenuItem({
+                    label: i18n.layerSwipe,
+                    popup: swipeMenu
+                }));
+            }
+            // metadata link
+            // service url
+            if (controlOptions.metadataUrl === true && layer.url) {
+                self.addChild(new MenuSeparator());
+                self.addChild(new MenuItem({
+                    label: i18n.metadata,
+                    onClick: function () {
+                        window.open(layer.url, '_blank');
+                    }
+                }));
+            }
+            // custom url
+            if (controlOptions.metadataUrl && typeof controlOptions.metadataUrl === 'string') {
+                self.addChild(new MenuSeparator());
+                self.addChild(new MenuItem({
+                    label: i18n.metadata,
+                    onClick: function () {
+                        window.open(controlOptions.metadataUrl, '_blank');
+                    }
+                }));
+            }
+            //if last child is a separator remove it
+            var lastChild = self.getChildren()[self.getChildren().length - 1];
+            if (lastChild && lastChild.isInstanceOf(MenuSeparator)) {
+                self.removeChild(lastChild);
+            }
+        }
+    });
+});

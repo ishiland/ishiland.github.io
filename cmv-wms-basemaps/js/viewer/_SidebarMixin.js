@@ -1,7 +1,119 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'dojo/dom',
+    'dojo/sniff',
+    'dojo/Deferred',
+    'module',
 
-define(["dojo/_base/declare","dojo/_base/lang","dojo/dom","dojo/sniff","dojo/Deferred","module","put-selector"],function(e,i,t,a,o,s,r,n){return e(null,{postConfig:function(){if(this.config.layout=this.config.layout||{},this._checkForSidebarLayout(),this.config.layout.sidebar){this.inherited(arguments),this.config.panes=this.mixinDeep(this.config.panes||{},{left:{collapsible:!1,style:"display:none !important"}});var e=new o;return require(["viewer/sidebar/Sidebar"],i.hitch(this,function(t){n=t,this.mapDeferred.then(i.hitch(this,"_createSidebar")),e.resolve()})),e}return this.inherited(arguments)},_checkForSidebarLayout:function(){var e=this.config.layout.sidebar;switch(e){case!0:case!1:break;case"mobile":a("mobile")&&(e=!0);break;case"phone":a("phone")&&(e=!0);break;default:"string"==typeof e?a(e)&&(e=!0):a("phone")&&(e=!0)}this.config.layout.sidebar=e},_createSidebar:function(){var e=t.byId(this.map.id),i=r(this.map.root,"div.sidebar-map");r(i,">",this.map._slider),this.sidebar=new n({map:this.map,mapContainer:e,collapseSyncNode:i},r(this.map.root,"div")),this.sidebar.startup(),this._createTitlePaneWidget=this._createTabPaneWidget},_createTabPaneWidget:function(e,i){var t=i.tabOptions||{id:e,title:i.title,iconClass:i.iconClass};return this.sidebar.createTab(t)}})});
-//# sourceMappingURL=_SidebarMixin.js.map
+    'put-selector'
+
+], function (
+    declare,
+    lang,
+    dom,
+    has,
+    Deferred,
+    module,
+
+    put,
+
+    Sidebar
+) {
+
+    return declare(null, {
+
+        postConfig: function () {
+            this.config.layout = this.config.layout || {};
+            this._checkForSidebarLayout();
+
+            if (this.config.layout.sidebar) {
+                this.inherited(arguments);
+                this.config.panes = this.mixinDeep(this.config.panes || {}, {
+                    left: {
+                        collapsible: false,
+                        style: 'display:none !important'
+                    }
+                });
+                var deferred = new Deferred();
+                require([
+                    'viewer/sidebar/Sidebar'
+                ], lang.hitch(this, function (sidebar) {
+                    Sidebar = sidebar;
+                    this.mapDeferred.then(lang.hitch(this, '_createSidebar'));
+                    deferred.resolve();
+                }));
+                return deferred;
+            }
+            return this.inherited(arguments);
+        },
+
+        _checkForSidebarLayout: function () {
+            var sidebar = this.config.layout.sidebar;
+
+            switch (sidebar) {
+            // all devices
+            case true:
+                break;
+
+            // no devices
+            case false:
+                break;
+
+            // tablets and phones
+            case 'mobile':
+                if (has('mobile')) {
+                    sidebar = true;
+                }
+                break;
+
+            // phones
+            case 'phone':
+                if (has('phone')) {
+                    sidebar = true;
+                }
+                break;
+            default:
+                // perhaps they've configured something we don't expect
+                if (typeof(sidebar) === 'string') {
+                    if (has(sidebar)) {
+                        sidebar = true;
+                    }
+                // default is just for phones
+                } else if (has('phone')) {
+                    sidebar = true;
+                }
+                break;
+            }
+            this.config.layout.sidebar = sidebar;
+        },
+
+        _createSidebar: function () {
+            var mapContainer = dom.byId(this.map.id);
+            //create controls div
+            var mapControlsNode = put(this.map.root, 'div.sidebar-map');
+            //move the slider into the controls div
+            put(mapControlsNode, '>', this.map._slider);
+            //create sidebar
+            this.sidebar = new Sidebar({
+                map: this.map,
+                mapContainer: mapContainer,
+                collapseSyncNode: mapControlsNode
+            }, put(this.map.root, 'div'));
+            this.sidebar.startup();
+
+            this._createTitlePaneWidget = this._createTabPaneWidget;
+        },
+
+        _createTabPaneWidget: function (parentId, widgetConfig) {
+            var tabOptions = widgetConfig.tabOptions || {
+                id: parentId,
+                title: widgetConfig.title,
+                iconClass: widgetConfig.iconClass
+            };
+
+            return this.sidebar.createTab(tabOptions);
+        }
+
+    });
+});

@@ -1,7 +1,133 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'dojo/_base/array',
+    'dojo/on',
+    'dojo/dom-class',
+    'dojo/dom-style',
+    'dojo/dom-attr',
+    'dojo/fx',
+    'dojo/html',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dojo/text!./templates/Folder.html'
+], function (
+    declare,
+    lang,
+    array,
+    on,
+    domClass,
+    domStyle,
+    domAttr,
+    fx,
+    html,
+    WidgetBase,
+    TemplatedMixin,
+    folderTemplate
+) {
+    var _DynamicFolder = declare([WidgetBase, TemplatedMixin], {
+        control: null,
+        sublayerInfo: null,
+        icons: null,
+        // ^args
+        templateString: folderTemplate,
+        _expandClickHandler: null,
+        _handlers: [],
+        postCreate: function () {
+            this.inherited(arguments);
+            // Should the control be visible or hidden (depends on subLayerInfos)?
+            if (this.control.controlOptions.subLayerInfos && !this.control.controlOptions.includeUnspecifiedLayers) {
+                var subLayerInfos = array.map(this.control.controlOptions.subLayerInfos, function (sli) {
+                    return sli.id;
+                });
+                if (array.indexOf(subLayerInfos, this.sublayerInfo.id) < 0) {
+                    domClass.add(this.domNode, 'layerControlHidden');
+                }
+            }
+            // Should the control be visible or hidden?
+            if (this.control.controlOptions.layerIds && array.indexOf(this.control.controlOptions.layerIds, this.sublayerInfo.id) < 0) {
+                domClass.add(this.domNode, 'layerControlHidden');
+            }
+            var checkNode = this.checkNode;
+            domAttr.set(checkNode, 'data-sublayer-id', this.sublayerInfo.id);
+            domClass.add(checkNode, this.control.layer.id + '-layerControlSublayerCheck');
+            if (array.indexOf(this.control.layer.visibleLayers, this.sublayerInfo.id) !== -1) {
+                this._setSublayerCheckbox(true, checkNode);
+            } else {
+                this._setSublayerCheckbox(false, checkNode);
+            }
+            this._handlers.push(on(checkNode, 'click', lang.hitch(this, function (event) {
 
-define(["dojo/_base/declare","dojo/_base/lang","dojo/_base/array","dojo/on","dojo/dom-class","dojo/dom-style","dojo/dom-attr","dojo/fx","dojo/html","dijit/_WidgetBase","dijit/_TemplatedMixin","dojo/text!./templates/Folder.html"],function(e,o,t,n,i,a,s,l,c,d,r,h){return e([d,r],{control:null,sublayerInfo:null,icons:null,templateString:h,_expandClickHandler:null,_handlers:[],postCreate:function(){if(this.inherited(arguments),this.control.controlOptions.subLayerInfos&&!this.control.controlOptions.includeUnspecifiedLayers){var e=t.map(this.control.controlOptions.subLayerInfos,function(e){return e.id});t.indexOf(e,this.sublayerInfo.id)<0&&i.add(this.domNode,"layerControlHidden")}this.control.controlOptions.layerIds&&t.indexOf(this.control.controlOptions.layerIds,this.sublayerInfo.id)<0&&i.add(this.domNode,"layerControlHidden");var a=this.checkNode;s.set(a,"data-sublayer-id",this.sublayerInfo.id),i.add(a,this.control.layer.id+"-layerControlSublayerCheck"),-1!==t.indexOf(this.control.layer.visibleLayers,this.sublayerInfo.id)?this._setSublayerCheckbox(!0,a):this._setSublayerCheckbox(!1,a),this._handlers.push(n(a,"click",o.hitch(this,function(e){e.stopPropagation&&e.stopPropagation(),"checked"===s.get(a,"data-checked")?this._setSublayerCheckbox(!1,a):this._setSublayerCheckbox(!0,a),this.control._setVisibleLayers(),this._checkboxScaleRange()}))),c.set(this.labelNode,this.sublayerInfo.name),this._expandClick(),0===this.sublayerInfo.minScale&&0===this.sublayerInfo.maxScale||(this._checkboxScaleRange(),this._handlers.push(this.control.layer.getMap().on("zoom-end",o.hitch(this,"_checkboxScaleRange"))))},_expandClick:function(){var e=this.icons;this._handlers.push(this._expandClickHandler=n(this.expandClickNode,"click",o.hitch(this,function(){var o=this.expandNode,t=this.expandIconNode;"none"===a.get(o,"display")?(l.wipeIn({node:o,duration:300}).play(),i.replace(t,e.folderOpen,e.folder)):(l.wipeOut({node:o,duration:300}).play(),i.replace(t,e.folder,e.folderOpen))})))},_setSublayerCheckbox:function(e,o){o=o||this.checkNode;var t=this.icons;e?(s.set(o,"data-checked","checked"),i.replace(o,t.checked,t.unchecked)):(s.set(o,"data-checked","unchecked"),i.replace(o,t.unchecked,t.checked))},_checkboxScaleRange:function(){var e=this.checkNode,o=this.control.layer.getMap().getScale(),t=this.sublayerInfo.minScale,n=this.sublayerInfo.maxScale;i.remove(e,"layerControlCheckIconOutScale"),(0!==t&&o>t||0!==n&&o<n)&&i.add(e,"layerControlCheckIconOutScale")},destroy:function(){this.inherited(arguments),this._handlers.forEach(function(e){e.remove()})}})});
-//# sourceMappingURL=_DynamicFolder.js.map
+                // prevent click event from bubbling
+                if (event.stopPropagation) {
+                    event.stopPropagation();
+                }
+
+                if (domAttr.get(checkNode, 'data-checked') === 'checked') {
+                    this._setSublayerCheckbox(false, checkNode);
+                } else {
+                    this._setSublayerCheckbox(true, checkNode);
+                }
+                this.control._setVisibleLayers();
+                this._checkboxScaleRange();
+            })));
+            html.set(this.labelNode, this.sublayerInfo.name);
+            this._expandClick();
+            if (this.sublayerInfo.minScale !== 0 || this.sublayerInfo.maxScale !== 0) {
+                this._checkboxScaleRange();
+                this._handlers.push(this.control.layer.getMap().on('zoom-end', lang.hitch(this, '_checkboxScaleRange')));
+            }
+        },
+        // add on event to expandClickNode
+        _expandClick: function () {
+            var i = this.icons;
+            this._handlers.push(this._expandClickHandler = on(this.expandClickNode, 'click', lang.hitch(this, function () {
+                var expandNode = this.expandNode,
+                    iconNode = this.expandIconNode;
+                if (domStyle.get(expandNode, 'display') === 'none') {
+                    fx.wipeIn({
+                        node: expandNode,
+                        duration: 300
+                    }).play();
+                    domClass.replace(iconNode, i.folderOpen, i.folder);
+                } else {
+                    fx.wipeOut({
+                        node: expandNode,
+                        duration: 300
+                    }).play();
+                    domClass.replace(iconNode, i.folder, i.folderOpen);
+                }
+            })));
+        },
+        // set checkbox based on layer so it's always in sync
+        _setSublayerCheckbox: function (checked, checkNode) {
+            checkNode = checkNode || this.checkNode;
+            var i = this.icons;
+            if (checked) {
+                domAttr.set(checkNode, 'data-checked', 'checked');
+                domClass.replace(checkNode, i.checked, i.unchecked);
+            } else {
+                domAttr.set(checkNode, 'data-checked', 'unchecked');
+                domClass.replace(checkNode, i.unchecked, i.checked);
+            }
+        },
+        // check scales and add/remove disabled classes from checkbox
+        _checkboxScaleRange: function () {
+            var node = this.checkNode,
+                scale = this.control.layer.getMap().getScale(),
+                min = this.sublayerInfo.minScale,
+                max = this.sublayerInfo.maxScale;
+            domClass.remove(node, 'layerControlCheckIconOutScale');
+            if ((min !== 0 && scale > min) || (max !== 0 && scale < max)) {
+                domClass.add(node, 'layerControlCheckIconOutScale');
+            }
+        },
+        destroy: function () {
+            this.inherited(arguments);
+            this._handlers.forEach(function (h) {
+                h.remove();
+            });
+        }
+    });
+    return _DynamicFolder;
+});

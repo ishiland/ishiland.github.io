@@ -1,7 +1,282 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'dojo/_base/array',
+    'dojo/on',
+    'dojo/topic',
+    'dojo/dom-construct',
+    'dojo/dom-style',
+    'dojo/dom-class',
+    'dojo/dom-attr',
+    'dojo/fx',
+    'dojo/html',
+    'dijit/MenuItem',
+    './../plugins/LayerMenu',
+    'dojo/text!./templates/Control.html'
+], function (
+    declare,
+    lang,
+    array,
+    on,
+    topic,
+    domConst,
+    domStyle,
+    domClass,
+    domAttr,
+    fx,
+    html,
+    MenuItem,
+    LayerMenu,
+    template
+) {
+    var _Control = declare([], {
+        templateString: template, // widget template
+        controller: null, // LayerControl instance
+        layer: null, // the layer object
+        layerTitle: 'Layer Title', // default title
+        controlOptions: null, // control options
+        layerMenu: null, //the controls menu
+        icons: null,
+        _reorderUp: null, // used by LayerMenu
+        _reorderDown: null, // used by LayerMenu
+        _scaleRangeHandler: null, // handle for scale range awareness
+        _expandClickHandler: null, // the click handler for the expandNode
+        constructor: function (params) {
+            if (params.controller) {
+                this.icons = params.controller.icons;
+            } // if not you've got bigger problems
+            this._handlers = [];
+        },
+        postCreate: function () {
+            this.inherited(arguments);
+            if (!this.controller) {
+                topic.publish('viewer/handleError', {
+                    source: 'LayerControl/_Control',
+                    error: 'controller option is required'
+                });
+                this.destroy();
+                return;
+            }
+            if (!this.layer) {
+                topic.publish('viewer/handleError', {
+                    source: 'LayerControl/_Control',
+                    error: 'layer option is required'
+                });
+                this.destroy();
+                return;
+            }
 
-define(["dojo/_base/declare","dojo/_base/lang","dojo/_base/array","dojo/on","dojo/topic","dojo/dom-construct","dojo/dom-style","dojo/dom-class","dojo/dom-attr","dojo/fx","dojo/html","dijit/MenuItem","./../plugins/LayerMenu","dojo/text!./templates/Control.html"],function(e,i,t,n,a,l,o,s,h,r,c,d,u,p){return e([],{templateString:p,controller:null,layer:null,layerTitle:"Layer Title",controlOptions:null,layerMenu:null,icons:null,_reorderUp:null,_reorderDown:null,_scaleRangeHandler:null,_expandClickHandler:null,constructor:function(e){e.controller&&(this.icons=e.controller.icons),this._handlers=[]},postCreate:function(){return this.inherited(arguments),this.controller?this.layer?void(this.layer.loaded?this._initialize():this._handlers.push(this.layer.on("load",i.hitch(this,"_initialize")))):(a.publish("viewer/handleError",{source:"LayerControl/_Control",error:"layer option is required"}),void this.destroy()):(a.publish("viewer/handleError",{source:"LayerControl/_Control",error:"controller option is required"}),void this.destroy())},_initialize:function(){this._layerTypePreInit&&this._layerTypePreInit();var e=this.layer,t=this.controlOptions;this._setLayerCheckbox(e,this.checkNode),c.set(this.labelNode,this.layerTitle),!0!==t.noMenu&&!0!==this.controller.noMenu||!0===this.controller.noMenu&&!1===t.noMenu?(this.layerMenu=new u({control:this,contextMenuForWindow:!1,targetNodeIds:[this.menuNode],leftClickToOpen:!0}),this.layerMenu.startup(),this._initCustomMenu()):(s.remove(this.menuNode,"fa, layerControlMenuIcon, "+this.icons.menu),o.set(this.menuClickNode,"cursor","default")),0===e.minScale&&0===e.maxScale||(this._checkboxScaleRange(),this._scaleRangeHandler=e.getMap().on("zoom-end",i.hitch(this,"_checkboxScaleRange"))),this._layerTypeInit(),t.expanded&&t.sublayers&&this.expandClickNode.click(),this._handlers.push(n(this.checkNode,"click",i.hitch(this,"_setLayerVisibility",e,this.checkNode)),e.on("scale-range-change",i.hitch(this,"_scaleRangeChange")),e.on("update-start",i.hitch(this,"_updateStart")),e.on("update-end",i.hitch(this,"_updateEnd")),e.on("visibility-change",i.hitch(this,"_visibilityChange")))},_initCustomMenu:function(){t.forEach(this.controlOptions.menu,i.hitch(this,"_addCustomMenuItem",this.layerMenu))},_addCustomMenuItem:function(e,t){var n=new d(t);n.set("onClick",i.hitch(this,function(){a.publish("layerControl/"+t.topic,{layer:this.layer,iconNode:this.iconNode,menuItem:n})})),e.addChild(n)},_expandClick:function(){this._expandClickHandler=n(this.expandClickNode,"click",i.hitch(this,"_expandClicked")),this._handlers.push(this._expandClickHandler)},_expandClicked:function(){var e=this.icons,i=this.expandNode,t=this.expandIconNode;"none"===o.get(i,"display")?(r.wipeIn({node:i,duration:300}).play(),s.replace(t,e.collapse,e.expand)):(r.wipeOut({node:i,duration:300}).play(),s.replace(t,e.expand,e.collapse))},_expandRemove:function(){s.remove(this.expandIconNode,["fa",this.icons.expand,"layerControlToggleIcon"]),o.set(this.expandClickNode,"cursor","default"),l.destroy(this.expandNode)},_setLayerVisibility:function(e,i,t){t.stopPropagation&&t.stopPropagation(),e.visible?(this._setLayerCheckbox(e,i),e.hide(),a.publish("layerControl/layerToggle",{id:e.id,visible:e.visible,params:e._params})):(this._setLayerCheckbox(e,i),e.show(),a.publish("layerControl/layerToggle",{id:e.id,visible:e.visible,params:e._params})),0===e.minScale&&0===e.maxScale||this._checkboxScaleRange()},_setLayerCheckbox:function(e,i){var t=this.icons;e.visible?(h.set(i,"data-checked","checked"),s.replace(i,t.checked,t.unchecked)):(h.set(i,"data-checked","unchecked"),s.replace(i,t.unchecked,t.checked))},_checkboxScaleRange:function(){var e=this.checkNode,i=this.layer,t=i.getMap().getScale(),n=i.minScale,a=i.maxScale;s.remove(e,"layerControlCheckIconOutScale"),(0!==n&&t>n||0!==a&&t<a)&&s.add(e,"layerControlCheckIconOutScale")},_scaleRangeChange:function(){if(0!==this.layer.minScale||0!==this.layer.maxScale){if(this._checkboxScaleRange(),this._scaleRangeHandler){var e=t.indexOf(this._handlers,this._scaleRangeHandler);-1!==e&&(this._handlers[e].remove(),this._handlers.splice(e,1))}this._scaleRangeHandler=this.layer.getMap().on("zoom-end",i.hitch(this,"_checkboxScaleRange")),this._handlers.push(this._scaleRangeHandler)}else if(this._checkboxScaleRange(),this._scaleRangeHandler){var n=t.indexOf(this._handlers,this._scaleRangeHandler);-1!==n&&(this._handlers[n].remove(),this._handlers.splice(n,1)),this._scaleRangeHandler=null}},_updateStart:function(){o.set(this.layerUpdateNode,"display","inline-block"),this._layerState=i.clone({visible:this.layer.visible,visibleLayers:this.layer.visibleLayers||null})},_updateEnd:function(){o.set(this.layerUpdateNode,"display","none"),this._layerState||(this._layerState=null)},_visibilityChange:function(e){(e.visible&&"unchecked"===h.get(this.checkNode,"data-checked")||!e.visible&&"checked"===h.get(this.checkNode,"data-checked"))&&this._setLayerCheckbox(this.layer,this.checkNode)},destroy:function(){this.inherited(arguments),this._handlers.forEach(function(e){e.remove()})}})});
-//# sourceMappingURL=_Control.js.map
+            if (this.layer.loaded) {
+                this._initialize();
+            } else {
+                this._handlers.push(this.layer.on('load', lang.hitch(this, '_initialize')));
+            }
+        },
+        // initialize the control
+        _initialize: function () {
+            // an optional function in each control widget called before widget init
+            if (this._layerTypePreInit) {
+                this._layerTypePreInit();
+            }
+            var layer = this.layer,
+                controlOptions = this.controlOptions;
+            // set checkbox
+            this._setLayerCheckbox(layer, this.checkNode);
+            // set title
+            html.set(this.labelNode, this.layerTitle);
+            // create layer menu
+            if ((controlOptions.noMenu !== true && this.controller.noMenu !== true) || (this.controller.noMenu === true && controlOptions.noMenu === false)) {
+                this.layerMenu = new LayerMenu({
+                    control: this,
+                    contextMenuForWindow: false,
+                    targetNodeIds: [this.menuNode],
+                    leftClickToOpen: true
+                });
+                this.layerMenu.startup();
+                this._initCustomMenu();
+            } else {
+                domClass.remove(this.menuNode, 'fa, layerControlMenuIcon, ' + this.icons.menu);
+                domStyle.set(this.menuClickNode, 'cursor', 'default');
+            }
+            // if layer has scales set
+            if (layer.minScale !== 0 || layer.maxScale !== 0) {
+                this._checkboxScaleRange();
+                this._scaleRangeHandler = layer.getMap().on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
+            }
+            // a function in each control widget for layer type specifics like legends and such
+            this._layerTypeInit();
+            // show expandNode
+            //   no harm if click handler wasn't created
+            if (controlOptions.expanded && controlOptions.sublayers) {
+                this.expandClickNode.click();
+            }
+            // esri layer's don't inherit from Stateful
+            //   connect to update events to handle "watching" layers
+            this._handlers.push(
+                on(this.checkNode, 'click', lang.hitch(this, '_setLayerVisibility', layer, this.checkNode)),
+                layer.on('scale-range-change', lang.hitch(this, '_scaleRangeChange')),
+                layer.on('update-start', lang.hitch(this, '_updateStart')),
+                layer.on('update-end', lang.hitch(this, '_updateEnd')),
+                layer.on('visibility-change', lang.hitch(this, '_visibilityChange'))
+            );
+        },
+        _initCustomMenu: function () {
+            array.forEach(this.controlOptions.menu, lang.hitch(this, '_addCustomMenuItem', this.layerMenu));
+        },
+        _addCustomMenuItem: function (menu, menuItem) {
+            //create the menu item
+            var item = new MenuItem(menuItem);
+            item.set('onClick', lang.hitch(this, function () {
+                topic.publish('layerControl/' + menuItem.topic, {
+                    layer: this.layer,
+                    iconNode: this.iconNode,
+                    menuItem: item
+                });
+            }));
+            menu.addChild(item);
+        },
+        // add on event to expandClickNode
+        _expandClick: function () {
+            this._expandClickHandler = on(this.expandClickNode, 'click', lang.hitch(this, '_expandClicked'));
+            this._handlers.push(this._expandClickHandler);
+        },
+        _expandClicked: function () {
+            var i = this.icons,
+                expandNode = this.expandNode,
+                iconNode = this.expandIconNode;
+            if (domStyle.get(expandNode, 'display') === 'none') {
+                fx.wipeIn({
+                    node: expandNode,
+                    duration: 300
+                }).play();
+                domClass.replace(iconNode, i.collapse, i.expand);
+            } else {
+                fx.wipeOut({
+                    node: expandNode,
+                    duration: 300
+                }).play();
+                domClass.replace(iconNode, i.expand, i.collapse);
+            }
+        },
+        // removes the icons and cursor:pointer from expandClickNode and destroys expandNode
+        _expandRemove: function () {
+            domClass.remove(this.expandIconNode, ['fa', this.icons.expand, 'layerControlToggleIcon']);
+            domStyle.set(this.expandClickNode, 'cursor', 'default');
+            domConst.destroy(this.expandNode);
+        },
+        // set layer visibility and update icon
+        _setLayerVisibility: function (layer, checkNode, event) {
+
+            // prevent click event from bubbling
+            if (event.stopPropagation) {
+                event.stopPropagation();
+            }
+
+            if (layer.visible) {
+                this._setLayerCheckbox(layer, checkNode);
+                layer.hide();
+                topic.publish('layerControl/layerToggle', {
+                    id: layer.id,
+                    visible: layer.visible,
+                    params: layer._params
+                });
+            } else {
+                this._setLayerCheckbox(layer, checkNode);
+                layer.show();
+                topic.publish('layerControl/layerToggle', {
+                    id: layer.id,
+                    visible: layer.visible,
+                    params: layer._params
+                });
+            }
+            if (layer.minScale !== 0 || layer.maxScale !== 0) {
+                this._checkboxScaleRange();
+            }
+        },
+        // set checkbox based on layer so it's always in sync
+        _setLayerCheckbox: function (layer, checkNode) {
+            var i = this.icons;
+            if (layer.visible) {
+                domAttr.set(checkNode, 'data-checked', 'checked');
+                domClass.replace(checkNode, i.checked, i.unchecked);
+            } else {
+                domAttr.set(checkNode, 'data-checked', 'unchecked');
+                domClass.replace(checkNode, i.unchecked, i.checked);
+            }
+        },
+        // check scales and add/remove disabled classes from checkbox
+        _checkboxScaleRange: function () {
+            var node = this.checkNode,
+                layer = this.layer,
+                scale = layer.getMap().getScale(),
+                min = layer.minScale,
+                max = layer.maxScale;
+            domClass.remove(node, 'layerControlCheckIconOutScale');
+            if ((min !== 0 && scale > min) || (max !== 0 && scale < max)) {
+                domClass.add(node, 'layerControlCheckIconOutScale');
+            }
+        },
+        _scaleRangeChange: function () {
+            if (this.layer.minScale !== 0 || this.layer.maxScale !== 0) {
+                this._checkboxScaleRange();
+                if (this._scaleRangeHandler) {
+                    var handlerIndex = array.indexOf(this._handlers, this._scaleRangeHandler);
+                    if (handlerIndex !== -1) {
+                        this._handlers[handlerIndex].remove();
+                        this._handlers.splice(handlerIndex, 1);
+                    }
+                }
+                this._scaleRangeHandler = this.layer.getMap().on('zoom-end', lang.hitch(this, '_checkboxScaleRange'));
+                this._handlers.push(this._scaleRangeHandler);
+            } else {
+                this._checkboxScaleRange();
+                if (this._scaleRangeHandler) {
+                    var handlerIndex2 = array.indexOf(this._handlers, this._scaleRangeHandler);
+                    if (handlerIndex2 !== -1) {
+                        this._handlers[handlerIndex2].remove();
+                        this._handlers.splice(handlerIndex2, 1);
+                    }
+                    this._scaleRangeHandler = null;
+                }
+            }
+        },
+        // anything the widget may need to do before update
+        _updateStart: function () {
+            domStyle.set(this.layerUpdateNode, 'display', 'inline-block'); //font awesome display
+            // clone a layer state before layer updates for use after update
+            this._layerState = lang.clone({
+                visible: this.layer.visible,
+                visibleLayers: this.layer.visibleLayers || null
+            });
+        },
+        // anything the widget may need to do after update
+        _updateEnd: function () {
+            domStyle.set(this.layerUpdateNode, 'display', 'none');
+            // how to handle external layer.setVisibleLayers() ???
+            //
+            // without topics to get/set sublayer state this will be challenging
+            // still up for debate...
+
+            // anything needing before update layer state
+            if (!this._layerState) {
+                // clear
+                this._layerState = null;
+                return;
+            }
+        },
+        // anything the widget may need to do after visibility change
+        _visibilityChange: function (r) {
+            // if the checkbox doesn't match layer visibility correct it by calling _setLayerCheckbox
+            if ((r.visible && domAttr.get(this.checkNode, 'data-checked') === 'unchecked') || (!r.visible && domAttr.get(this.checkNode, 'data-checked') === 'checked')) {
+                this._setLayerCheckbox(this.layer, this.checkNode);
+            }
+        },
+        destroy: function () {
+            this.inherited(arguments);
+            this._handlers.forEach(function (h) {
+                h.remove();
+            });
+        }
+    });
+    return _Control;
+});
