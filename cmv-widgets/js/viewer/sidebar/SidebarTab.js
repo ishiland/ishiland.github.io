@@ -1,0 +1,7 @@
+/*  ConfigurableMapViewerCMV
+ *  version 2.0.0-beta.2
+ *  Project: https://cmv.io/
+ */
+
+define(["dojo/_base/declare","dijit/_WidgetBase","dojo/_base/lang","dojo/on","dojo/dom-class","put-selector/put"],function(t,e,o,i,n,s){return t([e],{id:null,title:"Title",iconClass:"fa-bars",open:!1,baseClass:null,tabsButtonNode:null,tabsContainerNode:null,buttonNode:null,contentNode:null,titleNode:null,closeBtnNode:null,containerNode:null,postCreate:function(){this.inherited(arguments),this.buttonNode=s(this.tabsButtonNode,"li a[role=tab] i.fa."+this.iconClass+"<<"),this.contentNode=s(this.tabsContainerNode,"div."+this.baseClass+"-pane"),this.titleNode=s(this.contentNode,"div."+this.baseClass+"-pane-title $",this.title),this.containerNode=s(this.contentNode,"div.sidebar-widget div.sidebar-widget-content"),this.showCloseIcon&&(this.closeBtnNode=s(this.titleNode,"i.fa.fa-chevron-left."+this.baseClass+"-closeIcon"),i(this.closeBtnNode,"click",o.hitch(this,"tabClickHandler"))),i(this.buttonNode,"click",o.hitch(this,"tabClickHandler"))},openTab:function(t){n.add(this.buttonNode,"active"),n.add(this.containerNode,"active"),n.add(this.contentNode,"active"),t?this.open=!0:this.set("open",!0)},closeTab:function(t){n.remove(this.buttonNode,"active"),n.remove(this.containerNode,"active"),n.remove(this.contentNode,"active"),t?this.open=!1:this.set("open",!1)},tabClickHandler:function(){n.contains(this.buttonNode,"active")?this.closeTab():this.openTab()}})});
+//# sourceMappingURL=SidebarTab.js.map

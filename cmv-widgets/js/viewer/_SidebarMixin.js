@@ -1,0 +1,7 @@
+/*  ConfigurableMapViewerCMV
+ *  version 2.0.0-beta.2
+ *  Project: https://cmv.io/
+ */
+
+define(["dojo/_base/declare","dojo/_base/lang","dojo/dom","dojo/sniff","dojo/Deferred","module","put-selector"],function(e,t,a,i,r,o,s,n){return e(null,{postConfig:function(){if(this.config.layout=this.config.layout||{},this._checkForSidebarLayout(),this.config.layout.sidebar){this.inherited(arguments),this.config.panes=this.mixinDeep(this.config.panes||{},{left:{collapsible:!1,style:"display:none !important"}});var i=new r;return require(["viewer/sidebar/Sidebar"],t.hitch(this,function(e){n=e,this.mapDeferred.then(t.hitch(this,"_createSidebar")),i.resolve()})),i}return this.inherited(arguments)},_checkForSidebarLayout:function(){var e=this.config.layout.sidebar;switch(e){case!0:case!1:break;case"mobile":i("mobile")&&(e=!0);break;case"phone":i("phone")&&(e=!0);break;default:"string"==typeof e?i(e)&&(e=!0):i("phone")&&(e=!0)}this.config.layout.sidebar=e},_createSidebar:function(){var e=a.byId(this.map.id),i=s(this.map.root,"div.sidebar-map");this.sidebar=new n({map:this.map,mapContainer:e,collapseSyncNode:i},s(this.map.root,"div")),this.sidebar.startup(),this._origCreateTitlePaneWidget=t.clone(this._createTitlePaneWidget),this._createTitlePaneWidget=this._createTabPaneWidget},_createTabPaneWidget:function(e){if(!this.panes[e.placeAt])return this._origCreateTitlePaneWidget(e);this.sidebar.show();var i=e.tabOptions||e.paneOptions;return this.sidebar.createTab(i)}})});
+//# sourceMappingURL=_SidebarMixin.js.map
