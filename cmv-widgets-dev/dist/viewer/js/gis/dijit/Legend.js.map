@@ -1,1 +1,0 @@
-{"version":3,"sources":["Legend.js"],"names":["define","declare","lang","Legend","startup","this","inherited","arguments","map","on","hitch","refresh"],"mappings":";;;;;AAAAA,OAAO,CACH,qBACA,kBACA,qBACD,SAAUC,EAASC,EAAMC,GACxB,OAAOF,EAAQ,CAACE,GAAS,CACrBC,QAAS,WACLC,KAAKC,UAAUC,WACfF,KAAKG,IAAIC,GAAG,aAAcP,EAAKQ,MAAML,KAAM,WACvCA,KAAKM","file":"Legend.js"}

@@ -1,1 +1,0 @@
-{"version":3,"sources":["resource.js"],"names":["define","root","messages","instructions","notAvailable","rightClickMenuItem","label","es","fr","pt-br","pt-pt"],"mappings":";;;;;AACAA,OAAO,CACHC,KAAM,CACFC,SAAU,CACNC,aAAc,2EACdC,aAAc,mFAElBC,mBAAoB,CAChBC,MAAO,2BAGfC,IAAM,EACNC,IAAM,EACNC,SAAS,EACTC,SAAS","file":"resource.js"}

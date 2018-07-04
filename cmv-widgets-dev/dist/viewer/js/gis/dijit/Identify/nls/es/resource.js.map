@@ -1,1 +1,0 @@
-{"version":3,"sources":["resource.js"],"names":["define","labels","selectLayer","allVisibleLayers","rightClickMenuItem","label","mapInfoWindow","identifyingTitle"],"mappings":";;;;;AAAAA,OAAQ,CACJC,OAAQ,CACJC,YAAa,oFACbC,iBAAkB,oCAEtBC,mBAAoB,CAChBC,MAAO,oBAEXC,cAAe,CACXC,iBAAkB","file":"resource.js"}
