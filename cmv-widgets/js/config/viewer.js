@@ -359,11 +359,10 @@ define([
                 path: 'gis/plugins/AdvancedDraw',
                 options: 'config/advancedDraw'
             },
-
             myInfo: {
                 include: true,
                 id: 'myInfo',
-                type: 'floating',
+                // type: 'floating',
                 title: 'MyInfo',
                 path: 'gis/plugins/myInfo',
                 options: {
