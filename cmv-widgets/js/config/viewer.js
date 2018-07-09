@@ -362,9 +362,9 @@ define([
             myInfo: {
                 include: true,
                 id: 'myInfo',
-                type: 'floating',
+                // type: 'floating',
                 title: 'MyInfo',
-                preload: true,
+                preload: false,
                 path: 'gis/plugins/myInfo',
                 options: {
                     attachTo: 'sidebarLeft', // the dom node to place MyInfo
