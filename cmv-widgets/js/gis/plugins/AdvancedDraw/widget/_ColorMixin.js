@@ -1,7 +1,35 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/Color'
 
-define(["dojo/_base/declare","dojo/_base/Color"],function(o,r){return o(null,{_esriColorArrayToDojoColor:function(o){return o[3]/=255,r.fromArray(o)},_dojoColorToEsriColorArray:function(o){var r=o.toRgba();return r[3]=Math.round(255*r[3]),r}})});
-//# sourceMappingURL=_ColorMixin.js.map
+],
+function (declare,
+    Color) {
+
+    var _ColorMixin = declare(null, {
+
+        _esriColorArrayToDojoColor: function (esriColor) {
+
+            esriColor[3] /= 255;
+            var color = Color.fromArray(esriColor);
+
+            return color;
+
+        },
+
+        _dojoColorToEsriColorArray: function (dojoColor) {
+
+            var colorsArray = dojoColor.toRgba();
+            colorsArray[3] = Math.round(colorsArray[3] * 255);
+
+            return colorsArray;
+
+        }
+
+
+    });
+
+    return _ColorMixin;
+
+}
+);

@@ -1,7 +1,29 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
-
-define(["dojo/_base/declare","dojo/_base/lang","esri/OperationBase","esri/symbols/jsonUtils","dojo/i18n!./../nls/resource"],function(o,n,e,s,i){return o(e,{label:i.undoManager.editSymbol,constructor:function(o){n.mixin(this,o)},performUndo:function(){this.graphic.setSymbol(s.fromJson(this.startSym))},performRedo:function(){this.graphic.setSymbol(s.fromJson(this.endSym))}})});
-//# sourceMappingURL=editSymbolGraphicOp.js.map
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'esri/OperationBase',
+    'esri/symbols/jsonUtils',
+    'dojo/i18n!./../nls/resource'
+], function (
+    declare,
+    lang,
+    OperationBase,
+    symUtil,
+    i18n
+) {
+    return declare(OperationBase, {
+        label: i18n.undoManager.editSymbol,
+        constructor: function (params) {
+            lang.mixin(this, params);
+            // @param graphic
+            // @param startSym - geometry before edit
+            // @param endSym - geometry after edit
+        },
+        performUndo: function () {
+            this.graphic.setSymbol(symUtil.fromJson(this.startSym));
+        },
+        performRedo: function () {
+            this.graphic.setSymbol(symUtil.fromJson(this.endSym));
+        }
+    });
+});

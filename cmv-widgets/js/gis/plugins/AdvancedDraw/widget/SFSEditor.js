@@ -1,7 +1,231 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'dojo/dom-style',
+    './_SymEditorBase',
+    './SymColorPicker',
+    './StylePicker',
+    './NumericSlider'
+], function (declare,
+    lang,
+    domStyle,
+    _SymEditorBase,
+    SymColorPicker,
+    StylePicker,
+    NumericSlider) {
 
-define(["dojo/_base/declare","dojo/_base/lang","dojo/dom-style","./_SymEditorBase","./SymColorPicker","./StylePicker","./NumericSlider"],function(t,r,l,i,e,o,s){return t(i,{constructor:function(t){(t=t||{}).symbol||(t.symbol=this.advancedDrawConfig.defaultPolygonSymbol),r.mixin(this,t),this.initialized=!1,this.editorLabel=this.i18n.widgets.sfsEditor.defaultEditorLabel,this.leftHandControlsLabel=this.i18n.widgets.sfsEditor.leftHandControlsLabel,this.rightHandControlsLabel=this.i18n.widgets.sfsEditor.rightHandControlsLabel,this._set("symbol",this.symbol)},postCreate:function(){this.inherited(arguments),this._initFillStylePicker(),this._initFillColorPicker(),this._initOutlineStylePicker(),this._initOutlineColorPicker(),this._initOutlineWidthSlider(),this.initialized=!0},_initFillStylePicker:function(){this.fillStylePicker=new o({fillStyle:this.symbol.style,baseClass:"symbolEditorControl",label:this.i18n.widgets.symbolStylePicker.label,styleSet:"fill"},this.createLeftHandControlsDiv()),this.fillStylePicker.watch("style",r.hitch(this,function(){this._updateSymbolAtt(),this._symbolStyleHasFill(arguments[2])?this._toggleSymbolColorControl(!0):this._toggleSymbolColorControl(!1)})),this.fillStylePicker.startup()},_toggleSymbolColorControl:function(t){var i=t?"block":"none";l.set(this.fillColorPicker.domNode,"display",i)},_symbolStyleHasFill:function(t){return"esriSFSSolid"===t},_initFillColorPicker:function(){this.fillColorPicker=new e({color:this.symbol.color,baseClass:"symbolEditorControl",buttonLabel:this.i18n.widgets.symbolColorPicker.buttonLabel,sliderLabel:this.i18n.widgets.symbolColorPicker.sliderLabel,colorPickerOptions:this.colorPickerOptions},this.createLeftHandControlsDiv()),this.fillColorPicker.watch("color",r.hitch(this,function(){this._updateSymbolAtt()})),this.fillColorPicker.startup()},_initOutlineStylePicker:function(){this.outlineStylePicker=new o({lineStyle:this.symbol.outline.style,baseClass:"symbolEditorControl",label:this.i18n.widgets.symbolStylePicker.label,styleSet:"line"},this.createRightHandControlsDiv()),this.outlineStylePicker.watch("style",r.hitch(this,function(){this._updateSymbolAtt()})),this.outlineStylePicker.startup()},_initOutlineColorPicker:function(){this.outlineColorPicker=new e({color:this.symbol.outline.color,baseClass:"symbolEditorControl",buttonLabel:this.i18n.widgets.symbolColorPicker.buttonLabel,sliderLabel:this.i18n.widgets.symbolColorPicker.sliderLabel,colorPickerOptions:this.colorPickerOptions},this.createRightHandControlsDiv()),this.outlineColorPicker.watch("color",r.hitch(this,function(){this._updateSymbolAtt()})),this.outlineColorPicker.startup()},_initOutlineWidthSlider:function(){this.outlineWidthSlider=new s({value:this.symbol.outline.width,minimum:1,maximum:10,baseClass:"symbolEditorControl",label:this.i18n.widgets.symbolWidthPicker.label+" ("+this.symbol.outline.width+")"},this.createRightHandControlsDiv()),this.outlineWidthSlider.watch("value",r.hitch(this,function(){this.outlineWidthSlider.value=Math.round(10*this.outlineWidthSlider.value)/10,dojo.query("label",this.outlineWidthSlider.domNode)[0].innerHTML=this.i18n.widgets.symbolWidthPicker.label+" ("+this.outlineWidthSlider.value+")",this._updateSymbolAtt()})),this.outlineWidthSlider.startup()},_updateSymbolAtt:function(){if(this.initialized){var t=this._getSymbol();this._set("symbol",t)}},_getSymbol:function(){var t=r.clone(this.symbol),i=this.fillStylePicker.get("style");t.style=i;var l=this.fillColorPicker.get("color");t.color=l;var e=this.outlineStylePicker.get("style");t.outline.style=e;var o=this.outlineColorPicker.get("color");t.outline.color=o;var s=this.outlineWidthSlider.get("value");return t.outline.width=s,t},_getSymbolAttr:function(){return this._getSymbol()},_setSymbolAttr:function(t){this.initialized&&(this.fillColorPicker.set("color",t.color),this.fillStylePicker.set("style",t.style),this.outlineColorPicker.set("color",t.outline.color),this.outlineWidthSlider.set("value",t.outline.width),this.outlineStylePicker.set("style",t.outline.style)),this.symbol=t}})});
-//# sourceMappingURL=SFSEditor.js.map
+    var SFSEditor = declare(_SymEditorBase, {
+
+        constructor: function (options) {
+
+            options = options || {};
+
+            if (!options.symbol) {
+                options.symbol = this.advancedDrawConfig.defaultPolygonSymbol;
+            }
+            lang.mixin(this, options);
+
+            this.initialized = false;
+            this.editorLabel = this.i18n.widgets.sfsEditor.defaultEditorLabel;
+            this.leftHandControlsLabel = this.i18n.widgets.sfsEditor.leftHandControlsLabel;
+            this.rightHandControlsLabel = this.i18n.widgets.sfsEditor.rightHandControlsLabel;
+
+            this._set('symbol', this.symbol);
+
+        },
+
+        postCreate: function () {
+
+            this.inherited(arguments);
+
+            this._initFillStylePicker();
+            this._initFillColorPicker();
+
+            this._initOutlineStylePicker();
+            this._initOutlineColorPicker();
+            this._initOutlineWidthSlider();
+
+            this.initialized = true;
+
+        },
+
+        _initFillStylePicker: function () {
+
+            this.fillStylePicker = new StylePicker({
+                fillStyle: this.symbol.style,
+                baseClass: 'symbolEditorControl',
+                label: this.i18n.widgets.symbolStylePicker.label,
+                styleSet: 'fill'
+            }, this.createLeftHandControlsDiv());
+
+            this.fillStylePicker.watch('style', lang.hitch(this, function () {
+
+                this._updateSymbolAtt();
+
+                if (!this._symbolStyleHasFill(arguments[2])) {
+                    this._toggleSymbolColorControl(false);
+                } else {
+                    this._toggleSymbolColorControl(true);
+                }
+
+            }));
+
+            this.fillStylePicker.startup();
+
+        },
+
+        _toggleSymbolColorControl: function (show) {
+
+            var display = show ? 'block' : 'none';
+            domStyle.set(this.fillColorPicker.domNode, 'display', display);
+
+        },
+
+        _symbolStyleHasFill: function (style) {
+
+            if (style === 'esriSFSSolid') {
+                return true;
+            }
+            return false;
+        },
+
+        _initFillColorPicker: function () {
+
+            this.fillColorPicker = new SymColorPicker({
+                color: this.symbol.color,
+                baseClass: 'symbolEditorControl',
+                buttonLabel: this.i18n.widgets.symbolColorPicker.buttonLabel,
+                sliderLabel: this.i18n.widgets.symbolColorPicker.sliderLabel,
+                colorPickerOptions: this.colorPickerOptions
+            }, this.createLeftHandControlsDiv());
+
+            this.fillColorPicker.watch('color', lang.hitch(this, function () {
+
+                this._updateSymbolAtt();
+
+            }));
+
+            this.fillColorPicker.startup();
+
+        },
+
+        _initOutlineStylePicker: function () {
+
+            this.outlineStylePicker = new StylePicker({
+                lineStyle: this.symbol.outline.style,
+                baseClass: 'symbolEditorControl',
+                label: this.i18n.widgets.symbolStylePicker.label,
+                styleSet: 'line'
+            }, this.createRightHandControlsDiv());
+
+            this.outlineStylePicker.watch('style', lang.hitch(this, function () {
+
+                this._updateSymbolAtt();
+
+            }));
+
+            this.outlineStylePicker.startup();
+
+        },
+
+        _initOutlineColorPicker: function () {
+
+            this.outlineColorPicker = new SymColorPicker({
+                color: this.symbol.outline.color,
+                baseClass: 'symbolEditorControl',
+                buttonLabel: this.i18n.widgets.symbolColorPicker.buttonLabel,
+                sliderLabel: this.i18n.widgets.symbolColorPicker.sliderLabel,
+                colorPickerOptions: this.colorPickerOptions
+            }, this.createRightHandControlsDiv());
+
+            this.outlineColorPicker.watch('color', lang.hitch(this, function () {
+
+                this._updateSymbolAtt();
+
+            }));
+
+            this.outlineColorPicker.startup();
+
+        },
+
+        _initOutlineWidthSlider: function () {
+
+            this.outlineWidthSlider = new NumericSlider({
+                value: this.symbol.outline.width,
+                minimum: 1,
+                maximum: 10,
+                baseClass: 'symbolEditorControl',
+                label: this.i18n.widgets.symbolWidthPicker.label + ' (' + this.symbol.outline.width + ')'
+            }, this.createRightHandControlsDiv());
+
+            this.outlineWidthSlider.watch('value', lang.hitch(this, function () {
+                this.outlineWidthSlider.value = Math.round(this.outlineWidthSlider.value * 10) / 10; // set to 1dp
+                dojo.query('label', this.outlineWidthSlider.domNode)[0].innerHTML = this.i18n.widgets.symbolWidthPicker.label + ' (' + this.outlineWidthSlider.value + ')';
+                this._updateSymbolAtt();
+
+            }));
+
+            this.outlineWidthSlider.startup();
+
+        },
+
+        _updateSymbolAtt: function () {
+
+            if (!this.initialized) {
+                return;
+            }
+
+            var symbol = this._getSymbol();
+            this._set('symbol', symbol);
+
+        },
+
+        _getSymbol: function () {
+
+            var symbol = lang.clone(this.symbol);
+
+            var symStyle = this.fillStylePicker.get('style');
+            symbol.style = symStyle;
+
+            var symColor = this.fillColorPicker.get('color');
+            symbol.color = symColor;
+
+            var outlineStyle = this.outlineStylePicker.get('style');
+            symbol.outline.style = outlineStyle;
+
+            var outlineColor = this.outlineColorPicker.get('color');
+            symbol.outline.color = outlineColor;
+
+            var outlineWidth = this.outlineWidthSlider.get('value');
+            symbol.outline.width = outlineWidth;
+
+            return symbol;
+
+        },
+
+        _getSymbolAttr: function () {
+
+            return this._getSymbol();
+
+        },
+
+        _setSymbolAttr: function (value) {
+
+            if (this.initialized) {
+
+                this.fillColorPicker.set('color', value.color);
+                this.fillStylePicker.set('style', value.style);
+                this.outlineColorPicker.set('color', value.outline.color);
+                this.outlineWidthSlider.set('value', value.outline.width);
+                this.outlineStylePicker.set('style', value.outline.style);
+
+            }
+
+            this.symbol = value;
+
+        }
+
+    });
+
+    return SFSEditor;
+});

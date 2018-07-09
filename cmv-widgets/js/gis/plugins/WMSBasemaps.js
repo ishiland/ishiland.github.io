@@ -1,7 +1,128 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dijit/_WidgetsInTemplateMixin',
+    'dojo/_base/lang',
+    'dijit/DropDownMenu',
+    'dijit/MenuItem',
+    'dojo/_base/array',
+    'dojox/lang/functional',
+    'dojo/text!./WMSBasemaps/templates/WMSBasemaps.html',
+    'esri/dijit/BasemapGallery',
+    'dojo/i18n!./WMSBasemaps/nls/resource',
+    'dijit/form/DropDownButton',
+    'xstyle/css!./WMSBasemaps/css/WMSBasemaps.css'
+], function (declare, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, lang, DropDownMenu, MenuItem, array, functional, template, BasemapGallery, i18n) {
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dijit/_WidgetsInTemplateMixin","dojo/_base/lang","dijit/DropDownMenu","dijit/MenuItem","dojo/_base/array","dojox/lang/functional","dojo/text!./WMSBasemaps/templates/WMSBasemaps.html","esri/dijit/BasemapGallery","dojo/i18n!./WMSBasemaps/nls/resource","dijit/form/DropDownButton","xstyle/css!./WMSBasemaps/css/WMSBasemaps.css"],function(a,s,e,t,o,i,n,r,m,p,h,l){return a([s,e,t],{templateString:p,widgetsInTemplate:!0,i18n:l,mode:"",title:l.title,baseClass:"basemapWidget",mapStartBasemap:"",basemapsToShow:[],validBasemaps:[],postCreate:function(){this.inherited(arguments),this.currentBasemap=this.mapStartBasemap||null,"custom"===this.mode&&(this.gallery=new h({map:this.map,showArcGISBasemaps:!1,basemaps:m.map(this.basemaps,function(a){return a.basemap})}),this.gallery.startup()),this.menu=new i({style:"display: none;"}),r.forEach(this.basemapsToShow,function(p){if(this.basemaps.hasOwnProperty(p)){var a=new n({id:p,label:this.basemaps[p].title,iconClass:p===this.mapStartBasemap?"selectedIcon":"emptyIcon",onClick:o.hitch(this,function(){var a=this.basemaps[this.currentBasemap],s=this.basemaps[p],e=this.map.extent,t=this.map;if(p!==this.currentBasemap){if(a.basemap&&a.basemap.layerInfos){var i=t.getLayer(a.basemap.id);t.removeLayer(i)}if(s.basemap&&s.basemap.layerInfos){s.basemap.initialExtent=e,s.basemap.spatialReferences=[e.spatialReference.latestWkid],t.addLayer(s.basemap,1);var n=t.getLayer(p);n.on("update-start",o.hitch(this,function(){this.dropDownButton.set("iconClass","fas fa-sync fa-spin")})),n.on("update-end",o.hitch(this,function(){this.dropDownButton.set("iconClass","basemapsIcon")}))}else s.basemap||("agol"===this.mode?t.setBasemap(p):"custom"===this.mode&&this.gallery.select(p));this.currentBasemap=p;var m=this.menu.getChildren();r.forEach(m,function(a){a.id===p?a.set("iconClass","selectedIcon"):a.set("iconClass","emptyIcon")})}})});this.menu.addChild(a)}},this),this.dropDownButton.set("dropDown",this.menu)},startup:function(){this.inherited(arguments),"custom"===this.mode?this.map.getBasemap()!==this.mapStartBasemap&&this.gallery.select(this.mapStartBasemap):this.mapStartBasemap&&this.map.getBasemap()!==this.mapStartBasemap&&this.map.setBasemap(this.mapStartBasemap)}})});
-//# sourceMappingURL=WMSBasemaps.js.map
+    // main basemap widget
+    return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
+        templateString: template,
+        widgetsInTemplate: true,
+        i18n: i18n,
+        mode: '',
+        title: i18n.title,
+        baseClass: 'basemapWidget',
+        mapStartBasemap: '',
+        basemapsToShow: [],
+        validBasemaps: [],
+        postCreate: function () {
+
+            this.inherited(arguments);
+
+            this.currentBasemap = this.mapStartBasemap || null;
+
+            if (this.mode === 'custom') {
+                this.gallery = new BasemapGallery({
+                    map: this.map,
+                    showArcGISBasemaps: false,
+                    basemaps: functional.map(this.basemaps, function (map) {
+                        return map.basemap;
+                    })
+                });
+                this.gallery.startup();
+            }
+
+            this.menu = new DropDownMenu({
+                style: 'display: none;'
+            });
+
+            array.forEach(this.basemapsToShow, function (basemap) {
+
+                if (this.basemaps.hasOwnProperty(basemap)) {
+                    var menuItem = new MenuItem({
+                        id: basemap,
+                        label: this.basemaps[basemap].title,
+                        iconClass: (basemap === this.mapStartBasemap) ? 'selectedIcon' : 'emptyIcon',
+                        onClick: lang.hitch(this, function () {
+
+                            var currentBasemap = this.basemaps[this.currentBasemap];
+
+                            var selectedBasemap = this.basemaps[basemap];
+
+                            var extent = this.map.extent;
+
+                            var map = this.map;
+
+                            if (basemap !== this.currentBasemap) {
+
+                                //remove if WMS layer is current layer
+                                if (currentBasemap.basemap && currentBasemap.basemap.layerInfos) {
+                                    var layer = map.getLayer(currentBasemap.basemap.id);
+                                    map.removeLayer(layer);
+                                }
+                                if (selectedBasemap.basemap && selectedBasemap.basemap.layerInfos) {
+                                    selectedBasemap.basemap.initialExtent = extent;
+                                    // need to set spatialReferences of wms layer right before adding to map
+                                    selectedBasemap.basemap.spatialReferences = [extent.spatialReference.latestWkid];
+                                    map.addLayer(selectedBasemap.basemap, 1);
+
+                                    var newLayer = map.getLayer(basemap);
+
+                                    newLayer.on('update-start', lang.hitch(this, function () {
+                                        this.dropDownButton.set('iconClass', 'fas fa-sync fa-spin');
+                                    }));
+
+                                    newLayer.on('update-end', lang.hitch(this, function () {
+                                        this.dropDownButton.set('iconClass', 'basemapsIcon');
+                                    }));
+                                } else if (!selectedBasemap.basemap) {
+                                    if (this.mode === 'agol') {
+                                        map.setBasemap(basemap);
+                                    } else if (this.mode === 'custom') {
+                                        this.gallery.select(basemap);
+                                    }
+                                }
+
+                                this.currentBasemap = basemap;
+
+                                var ch = this.menu.getChildren();
+                                array.forEach(ch, function (c) {
+                                    if (c.id === basemap) {
+                                        c.set('iconClass', 'selectedIcon');
+                                    } else {
+                                        c.set('iconClass', 'emptyIcon');
+                                    }
+                                });
+                            }
+                        })
+                    });
+                    this.menu.addChild(menuItem);
+                }
+            }, this);
+
+            this.dropDownButton.set('dropDown', this.menu);
+        },
+        startup: function () {
+            this.inherited(arguments);
+            if (this.mode === 'custom') {
+                if (this.map.getBasemap() !== this.mapStartBasemap) { //based off the title of custom basemaps in viewer.js config
+                    this.gallery.select(this.mapStartBasemap);
+                }
+            } else if (this.mapStartBasemap && (this.map.getBasemap() !== this.mapStartBasemap)) {
+
+                this.map.setBasemap(this.mapStartBasemap);
+            }
+        }
+    });
+});
