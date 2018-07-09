@@ -19,12 +19,12 @@ define([
     template) {
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         name: 'MyInfo',
-        href: null,
+        // href: null,
         // widgetsInTemplate: true,
         templateString: template,
-        content: '',
+        // content: '',
         baseClass: 'cmvMyInfoWidget',
-        attachTo: 'sidebarLeft',
+        // attachTo: 'sidebarLeft',
 
         postCreate: function () {
 
