@@ -360,7 +360,7 @@ define([
                 options: 'config/advancedDraw'
             },
             myInfo: {
-                include: true,
+                include: false,
                 id: 'myInfo',
                 // type: 'floating',
                 title: 'MyInfo',
