@@ -91,7 +91,7 @@ define([
         mapOptions: {
             basemap: 'hybrid',
             center: [-74.4, 40.2],
-            zoom: 10,
+            zoom: 14,
             sliderStyle: 'small'
         },
 
