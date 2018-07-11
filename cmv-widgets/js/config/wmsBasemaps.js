@@ -47,7 +47,7 @@ define([
             //     basemap: new Basemap({
             //         id: 'streets',
             //         layers: [new BasemapLayer({
-            //             url: 'http://services.arcgisonline.com/arcgis/rest/services/ESRI_StreetMap_World_2D/MapServer'
+            //             url: 'https://services.arcgisonline.com/arcgis/rest/services/ESRI_StreetMap_World_2D/MapServer'
             //         })]
             //     })
             // },
@@ -62,7 +62,7 @@ define([
 
             Natural2015: {
                 title: 'NJ 2015 Leaf Off - WMS',
-                basemap: new WMSLayer('http://geodata.state.nj.us/imagerywms/Natural2015?', {
+                basemap: new WMSLayer('https://geodata.state.nj.us/imagerywms/Natural2015?', {
                     id: 'Natural2015',
                     format: 'png',
                     resourceInfo: resourceInfoStateOfNJ,
@@ -72,7 +72,7 @@ define([
 
             Infrared2015: {
                 title: 'NJ 2015 Infrared - WMS',
-                basemap: new WMSLayer('http://geodata.state.nj.us/imagerywms/Infrared2015?', {
+                basemap: new WMSLayer('https://geodata.state.nj.us/imagerywms/Infrared2015?', {
                     id: 'Infrared2015',
                     format: 'png',
                     resourceInfo: resourceInfoStateOfNJ,
