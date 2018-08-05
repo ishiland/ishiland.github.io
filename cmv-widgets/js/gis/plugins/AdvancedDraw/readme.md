@@ -5,10 +5,10 @@ Advanced Draw Widget for the Configurable Map Viewer (CMV).
 - Add text to map
 - Redo and Undo drawn features
 - Snap to existing features   
-- Custom Outline, Fill and Width properties for select geometries. 
+- Custom Outline, Fill and Width properties
 
 ## Configuration
 See the config file for `options`. 
 
-## Credits
-This widget was *slightly* modified from the codebase found [here](https://github.com/stevenjh/advanced-draw-widget/tree/development). 
+## Acknowledgements
+This widget was slightly modified from the codebase found [here](https://github.com/stevenjh/advanced-draw-widget/tree/development).

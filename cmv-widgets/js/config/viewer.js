@@ -8,8 +8,13 @@ define([
     'gis/plugins/Google',
     'dojo/i18n!./nls/main',
     'dojo/topic',
-    'dojo/sniff'
-], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, GoogleMapsLoader, i18n, topic, has) {
+    'dojo/sniff',
+    'esri/dijit/Basemap',
+    'esri/dijit/BasemapLayer',
+    'esri/geometry/Point'
+], function (units, Extent, esriConfig, /*urlUtils,*/ GeometryService, ImageParameters, GoogleMapsLoader, i18n, topic, has,
+             Basemap, BasemapLayer, Point
+) {
 
     // url to your proxy page, must be on same machine hosting you app. See proxy folder for readme.
     esriConfig.defaults.io.proxyUrl = 'proxy/proxy.ashx';
@@ -52,34 +57,34 @@ define([
     //these topics publish a simple message to the growler
     //in a real world example, these topics would be used
     //in their own widget to listen for layer menu click events
-    // topic.subscribe('layerControl/hello', function (event) {
-    //     topic.publish('growler/growl', {
-    //         title: 'Hello!',
-    //         message: event.layer._titleForLegend + ' ' +
-    //             (event.subLayer ? event.subLayer.name : '') +
-    //             ' says hello'
-    //     });
-    // });
-    // topic.subscribe('layerControl/goodbye', function (event) {
-    //     topic.publish('growler/growl', {
-    //         title: 'Goodbye!',
-    //         message: event.layer._titleForLegend + ' ' +
-    //             (event.subLayer ? event.subLayer.name : '') +
-    //             ' says goodbye'
-    //     });
-    // });
+    topic.subscribe('layerControl/hello', function (event) {
+        topic.publish('growler/growl', {
+            title: 'Hello!',
+            message: event.layer._titleForLegend + ' ' +
+                (event.subLayer ? event.subLayer.name : '') +
+                ' says hello'
+        });
+    });
+    topic.subscribe('layerControl/goodbye', function (event) {
+        topic.publish('growler/growl', {
+            title: 'Goodbye!',
+            message: event.layer._titleForLegend + ' ' +
+                (event.subLayer ? event.subLayer.name : '') +
+                ' says goodbye'
+        });
+    });
 
     // simple clustering example now. should be replaced with a layerControl plugin
-    // topic.subscribe('layerControl/toggleClustering', function (event) {
-    //     var layer = event.layer;
-    //     if (layer.getFeatureReduction()) {
-    //         if (layer.isFeatureReductionEnabled()) {
-    //             layer.disableFeatureReduction();
-    //         } else {
-    //             layer.enableFeatureReduction();
-    //         }
-    //     }
-    // });
+    topic.subscribe('layerControl/toggleClustering', function (event) {
+        var layer = event.layer;
+        if (layer.getFeatureReduction()) {
+            if (layer.isFeatureReductionEnabled()) {
+                layer.disableFeatureReduction();
+            } else {
+                layer.enableFeatureReduction();
+            }
+        }
+    });
 
     return {
         // used for debugging your app
@@ -88,11 +93,30 @@ define([
         //default mapClick mode, mapClickMode lets widgets know what mode the map is in to avoid multipult map click actions from taking place (ie identify while drawing).
         defaultMapClickMode: 'identify',
         // map options, passed to map constructor. see: https://developers.arcgis.com/javascript/jsapi/map-amd.html#map1
+        // mapOptions: {
+        //     basemap: 'hybrid',
+        //     center: [-74.4, 40.2],
+        //     zoom: 14,
+        //     sliderStyle: 'small'
+        // },
+
         mapOptions: {
-            basemap: 'hybrid',
-            center: [-74.4, 40.2],
-            zoom: 14,
-            sliderStyle: 'small'
+            basemap: new Basemap({
+                layers: [new BasemapLayer({
+                    url: 'https://geodata.state.nj.us/arcgis/rest/services/Basemap/Highlands_NJ/MapServer'
+                })]
+            }),
+            center: new Point({
+                x: 495472,
+                y: 745327,
+                spatialReference: {
+                    wkid: 3424
+                }
+            }),
+            zoom: 5,
+            sliderStyle: 'small',
+            showAttribution: true,
+            logo: false
         },
 
         //webMapId: 'ef9c7fbda731474d98647bebb4b33c20',  // High Cost Mortgage
@@ -165,42 +189,581 @@ define([
         // operationalLayers: Array of Layers to load on top of the basemap: valid 'type' options: 'dynamic', 'tiled', 'feature'.
         // The 'options' object is passed as the layers options for constructor. Title will be used in the legend only. id's must be unique and have no spaces.
         // 3 'mode' options: MODE_SNAPSHOT = 0, MODE_ONDEMAND = 1, MODE_SELECTION = 2
-        operationalLayers: [],
+        operationalLayers: [
+        //     {
+        //     type: 'feature',
+        //     url: 'https://services1.arcgis.com/6bXbLtkf4y11TosO/arcgis/rest/services/Restaurants/FeatureServer/0',
+        //     title: i18n.viewer.operationalLayers.restaurants,
+        //     options: {
+        //         id: 'restaurants',
+        //         opacity: 1.0,
+        //         visible: true,
+        //         outFields: ['*'],
+        //         featureReduction: {
+        //             type: 'cluster',
+        //             clusterRadius: 60
+        //         },
+        //         mode: 0
+        //     },
+        //     editorLayerInfos: {
+        //         disableGeometryUpdate: false
+        //     },
+        //     legendLayerInfos: {
+        //         exclude: false,
+        //         layerInfo: {
+        //             title: i18n.viewer.operationalLayers.restaurants
+        //         }
+        //     },
+        //     layerControlLayerInfos: {
+        //         layerGroup: 'Grouped Feature Layers',
+        //         menu: [{
+        //             id: 'toggle-clustering-menu',
+        //             topic: 'toggleClustering',
+        //             label: 'Toggle Clustering',
+        //             iconClass: 'fas fa-fw fa-toggle-on'
+        //         }]
+        //     }
+        // }, {
+        //     type: 'feature',
+        //     url: 'https://sampleserver6.arcgisonline.com/ArcGIS/rest/services/SF311/FeatureServer/0',
+        //     title: i18n.viewer.operationalLayers.sf311Incidents,
+        //     options: {
+        //         id: 'sf311Incidents',
+        //         opacity: 1.0,
+        //         visible: false,
+        //         outFields: ['req_type', 'req_date', 'req_time', 'address', 'district'],
+        //         mode: 0
+        //     },
+        //     layerControlLayerInfos: {
+        //         layerGroup: 'Grouped Feature Layers',
+        //         menu: [{
+        //             topic: 'hello',
+        //             label: 'Say Hello Custom',
+        //             iconClass: 'far fa-fw fa-smile'
+        //         }]
+        //     }
+        // }, {
+        //     type: 'dynamic',
+        //     url: 'https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/PublicSafety/PublicSafetyOperationalLayers/MapServer',
+        //     title: i18n.viewer.operationalLayers.louisvillePubSafety,
+        //     options: {
+        //         id: 'louisvillePubSafety',
+        //         opacity: 1.0,
+        //         visible: true,
+        //         imageParameters: buildImageParameters({
+        //             // include only sub layer ids.
+        //             // group layers omitted
+        //             layerIds: [2, 4, 5, 8, 12, 21],
+        //             layerOption: 'show'
+        //         })
+        //     },
+        //     identifyLayerInfos: {
+        //         layerIds: [2, 4, 5, 8, 12, 21]
+        //     },
+        //     layerControlLayerInfos: {
+        //         // group layers included to maintain folder hierarchy, not visibility.
+        //         layerIds: [0, 2, 4, 5, 8, 9, 10, 12, 21]
+        //     },
+        //     legendLayerInfos: {
+        //         layerInfo: {
+        //             hideLayers: [21]
+        //         }
+        //     }
+        // }, {
+        //     type: 'dynamic',
+        //     url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/DamageAssessment/MapServer',
+        //     title: i18n.viewer.operationalLayers.damageAssessment,
+        //     options: {
+        //         id: 'damageAssessment',
+        //         opacity: 1.0,
+        //         visible: true,
+        //         imageParameters: buildImageParameters()
+        //     },
+        //     identifyLayerInfos: {
+        //         returnFieldName: true
+        //     },
+        //     legendLayerInfos: {
+        //         exclude: true
+        //     },
+        //     layerControlLayerInfos: {
+        //         swipe: true,
+        //         metadataUrl: true,
+        //         expanded: true,
+        //
+        //         //override the menu on this particular layer
+        //         subLayerMenu: [{
+        //             topic: 'hello',
+        //             label: 'Say Hello',
+        //             iconClass: 'far fa-fw fa-smile'
+        //         }]
+        //     }
+        // }, {
+        //     type: 'dynamic',
+        //     url: 'https://sampleserver6.arcgisonline.com/arcgis/rest/services/SampleWorldCities/MapServer',
+        //     title: i18n.viewer.operationalLayers.cities,
+        //     options: {
+        //         id: 'cities',
+        //         visible: false
+        //     }
+        /*
+        //examples of vector tile layers (beta in v3.15)
+        }, {
+            type: 'vectortile',
+            title: 'Light Gray Canvas Vector',
+            url: 'https//www.arcgis.com/sharing/rest/content/items/bdf1eec3fa79456c8c7c2bb62f86dade/resources/styles/root.json',
+            options: {
+                id: 'vectortile1',
+                opacity: 0.8,
+                visible: true
+            }
+        }, {
+           //  taken from this demo: https://github.com/ycabon/presentations/blob/gh-pages/2015-berlin-plenary/demos/3.15-vectortile/create-by-style-object.html
+            type: 'vectortile',
+            title: 'Custom Vector Style',
+            options: {
+                id: 'vectortile2',
+                opacity: 1.0,
+                visible: true,
+                'glyphs': 'https://www.arcgis.com/sharing/rest/content/items/00cd8e843bae49b3a040423e5d65416b/resources/fonts/{fontstack}/{range}.pbf',
+                'sprite': 'https://www.arcgis.com/sharing/rest/content/items/00cd8e843bae49b3a040423e5d65416b/resources/sprites/sprite',
+                'version': 8,
+                'sources': {
+                    'esri': {
+                        'url': 'https://basemapsdev.arcgis.com/arcgis/rest/services/World_Basemap/VectorTileServer',
+                        'type': 'vector'
+                    }
+                },
+                'layers': [{
+                    'id': 'background',
+                    'type': 'background',
+                    'paint': {
+                        'background-color': '#556688'
+                    }
+                }, {
+                    'id': 'Land',
+                    'type': 'fill',
+                    'source': 'esri',
+                    'source-layer': 'Land',
+                    'paint': {
+                        'fill-color': '#273344'
+                    },
+                }, {
+                    'id': 'roads',
+                    'type': 'line',
+                    'source': 'esri',
+                    'source-layer': 'Road',
+                    'layout': {
+                        'line-join': 'round'
+                    },
+                    'paint': {
+                        'line-width': 1,
+                        'line-color': '#131622'
+                    }
+                }]
+            }
+        */
+        // }
+        ],
         // set include:true to load. For titlePane type set position the the desired order in the sidebar
         widgets: {
+            growler: {
+                include: false,
+                id: 'growler',
+                type: 'layout',
+                path: 'gis/dijit/Growler',
+                placeAt: document.body,
+                options: {
+                    style: 'position:absolute;top:15px;' + (has('phone') ? 'left:50%;transform:translate(-50%,0);' : 'right:15px;')
+                }
+            },
+            search: {
+                include: false,
+                type: has('phone') ? 'titlePane' : 'ui',
+                path: 'esri/dijit/Search',
+                placeAt: has('phone') ? null : 'top-center',
+                title: i18n.viewer.widgets.search,
+                iconClass: 'fas fa-search',
+                position: 0,
+                options: {
+                    map: true,
+                    visible: true,
+                    enableInfoWindow: false,
+                    enableButtonMode: has('phone') ? false : true,
+                    expanded: has('phone') ? true : false
+                }
+            },
+            reverseGeocoder: {
+                include: false,
+                type: 'invisible',
+                path: 'gis/dijit/ReverseGeocoder',
+                options: {
+                    map: true,
+                    mapRightClickMenu: true
+                }
+            },
+            // basemaps: {
+            //     include: true,
+            //     id: 'basemaps',
+            //     type: 'ui',
+            //     path: 'gis/dijit/Basemaps',
+            //     placeAt: 'top-right',
+            //     position: 'first',
+            //     options: 'config/basemaps'
+            // },
             wmsBasemaps: {
                 include: true,
                 id: 'wmsBasemaps',
                 type: 'domNode',
                 path: 'gis/plugins/WMSBasemaps',
                 srcNodeRef: 'basemapsDijit',
-                options: 'config/wmsBasemaps',
+                options: 'config/wmsBasemaps_custom'
             },
             advancedDraw: {
                 include: true,
                 open: false,
-                position: 1,
+                position: 3,
                 id: 'advancedDraw',
-                title: i18n.viewer.widgets.advancedDraw,
+                title: 'Advanced Draw',
                 iconClass: 'fas fa-fw fa-pencil-alt',
                 type: 'titlePane',
                 path: 'gis/plugins/AdvancedDraw',
                 options: 'config/advancedDraw'
             },
-            // myInfo: {
-            //     include: false,
-            //     id: 'myInfo',
-            //     // type: 'floating',
-            //     title: 'MyInfo',
-            //     preload: false,
-            //     path: 'gis/plugins/myInfo',
-            //     options: {
-            //         attachTo: 'sidebarLeft', // the dom node to place MyInfo
-            //         position: 'last', // first, last
-            //         href: 'js/config/my-info.html'
-            //         // content: '<div>My Content</div>' // pass in a string as an alternative to href
-            //     }
-            // }
+            myInfo: {
+                include: true,
+                id: 'myInfo',
+                type: 'floating',
+                title: 'MyInfo',
+                preload: true,
+                path: 'gis/plugins/MyInfo',
+                options: {
+                    attachTo: 'sidebarLeft', // the dom node to place MyInfo
+                    position: 'last', // “first”, “last”, or “only”
+                    href: 'js/config/myInfo.html'
+                    // content: '<div>My Info</div>' // pass in a string as an alternative to href
+                }
+            },
+            identify: {
+                include: false,
+                id: 'identify',
+                type: 'titlePane',
+                path: 'gis/dijit/Identify',
+                title: i18n.viewer.widgets.identify,
+                iconClass: 'fas fa-info-circle',
+                open: false,
+                preload: true,
+                position: 3,
+                options: 'config/identify'
+            },
+            mapInfo: {
+                include: false,
+                id: 'mapInfo',
+                type: 'domNode',
+                path: 'gis/dijit/MapInfo',
+                srcNodeRef: 'mapInfoDijit',
+                options: {
+                    map: true,
+                    mode: 'dms',
+                    firstCoord: 'y',
+                    unitScale: 3,
+                    showScale: true,
+                    xLabel: '',
+                    yLabel: '',
+                    minWidth: 286
+                }
+            },
+            scalebar: {
+                include: false,
+                id: 'scalebar',
+                type: 'map',
+                path: 'esri/dijit/Scalebar',
+                options: {
+                    map: true,
+                    attachTo: 'bottom-left',
+                    scalebarStyle: 'line',
+                    scalebarUnit: 'dual'
+                }
+            },
+            locateButton: {
+                include: false,
+                id: 'locateButton',
+                type: 'ui',
+                path: 'gis/dijit/LocateButton',
+                placeAt: 'top-left',
+                position: 'last',
+                options: {
+                    map: true,
+                    publishGPSPosition: true,
+                    highlightLocation: true,
+                    useTracking: true,
+                    geolocationOptions: {
+                        maximumAge: 0,
+                        timeout: 15000,
+                        enableHighAccuracy: true
+                    }
+                }
+            },
+            overviewMap: {
+                include: has('phone') ? false : true,
+                id: 'overviewMap',
+                type: 'map',
+                path: 'esri/dijit/OverviewMap',
+                options: {
+                    map: true,
+                    attachTo: 'bottom-right',
+                    color: '#0000CC',
+                    height: 100,
+                    width: 125,
+                    opacity: 0.30,
+                    visible: false
+                }
+            },
+            homeButton: {
+                include: false,
+                id: 'homeButton',
+                type: 'ui',
+                path: 'esri/dijit/HomeButton',
+                placeAt: 'top-left',
+                options: {
+                    map: true,
+                    extent: new Extent({
+                        xmin: -180,
+                        ymin: -85,
+                        xmax: 180,
+                        ymax: 85,
+                        spatialReference: {
+                            wkid: 4326
+                        }
+                    })
+                }
+            },
+            legend: {
+                include: false,
+                id: 'legend',
+                type: 'titlePane',
+                path: 'gis/dijit/Legend',
+                title: i18n.viewer.widgets.legend,
+                iconClass: 'far fa-fw fa-images',
+                open: false,
+                position: 1,
+                options: {
+                    map: true,
+                    legendLayerInfos: true
+                }
+            },
+            layerControl: {
+                include: false,
+                id: 'layerControl',
+                type: 'titlePane',
+                path: 'gis/dijit/LayerControl',
+                title: i18n.viewer.widgets.layerControl,
+                iconClass: 'fas fa-fw fa-th-list',
+                open: false,
+                position: 0,
+                options: {
+                    map: true,
+                    layerControlLayerInfos: true,
+                    separated: true,
+                    vectorReorder: true,
+                    overlayReorder: true,
+                    // create a custom menu entry in all of these feature types
+                    // the custom menu item will publish a topic when clicked
+                    menu: {
+                        feature: [{
+                            topic: 'hello',
+                            iconClass: 'fas fa-fw fa-smile',
+                            label: 'Say Hello'
+                        }]
+                    },
+                    //create a example sub layer menu that will
+                    //apply to all layers of type 'dynamic'
+                    subLayerMenu: {
+                        dynamic: [{
+                            topic: 'goodbye',
+                            iconClass: 'fas fa-fw fa-frown',
+                            label: 'Say goodbye'
+                        }]
+                    }
+                }
+            },
+            bookmarks: {
+                include: false,
+                id: 'bookmarks',
+                type: 'titlePane',
+                path: 'gis/dijit/Bookmarks',
+                title: i18n.viewer.widgets.bookmarks,
+                iconClass: 'fas fa-fw fa-bookmark',
+                open: false,
+                position: 2,
+                options: 'config/bookmarks'
+            },
+            find: {
+                include: false,
+                id: 'find',
+                type: 'titlePane',
+                canFloat: true,
+                path: 'gis/dijit/Find',
+                title: i18n.viewer.widgets.find,
+                iconClass: 'fas fa-fw fa-search',
+                open: false,
+                position: 3,
+                options: 'config/find'
+            },
+            draw: {
+                include: false,
+                id: 'draw',
+                type: 'titlePane',
+                canFloat: true,
+                path: 'gis/dijit/Draw',
+                title: i18n.viewer.widgets.draw,
+                iconClass: 'fas fa-fw fa-paint-brush',
+                open: false,
+                position: 4,
+                options: {
+                    map: true,
+                    mapClickMode: true
+                }
+            },
+            measure: {
+                include: false,
+                id: 'measurement',
+                type: 'titlePane',
+                canFloat: true,
+                path: 'gis/dijit/Measurement',
+                title: i18n.viewer.widgets.measure,
+                iconClass: 'fas fa-fw fa-expand',
+                open: false,
+                position: 5,
+                options: {
+                    map: true,
+                    mapClickMode: true,
+                    defaultAreaUnit: units.SQUARE_MILES,
+                    defaultLengthUnit: units.MILES
+                }
+            },
+            print: {
+                include: false,
+                id: 'print',
+                type: 'titlePane',
+                canFloat: true,
+                path: 'gis/dijit/Print',
+                title: i18n.viewer.widgets.print,
+                iconClass: 'fas fa-fw fa-print',
+                open: false,
+                position: 6,
+                options: {
+                    map: true,
+                    printTaskURL: 'https://utility.arcgisonline.com/arcgis/rest/services/Utilities/PrintingTools/GPServer/Export%20Web%20Map%20Task',
+                    copyrightText: 'Copyright 2014',
+                    authorText: 'Me',
+                    defaultTitle: 'Viewer Map',
+                    defaultFormat: 'PDF',
+                    defaultLayout: 'Letter ANSI A Landscape'
+                }
+            },
+            directions: {
+                include: false,
+                id: 'directions',
+                type: 'titlePane',
+                path: 'gis/dijit/Directions',
+                title: i18n.viewer.widgets.directions,
+                iconClass: 'fas fa-fw fa-map-signs',
+                open: false,
+                position: 7,
+                options: {
+                    map: true,
+                    mapRightClickMenu: true,
+                    options: {
+                        routeTaskUrl: 'https://sampleserver3.arcgisonline.com/ArcGIS/rest/services/Network/USA/NAServer/Route',
+                        routeParams: {
+                            directionsLanguage: 'en-US',
+                            directionsLengthUnits: units.MILES
+                        },
+                        active: false //for 3.12, starts active by default, which we dont want as it interfears with mapClickMode
+                    }
+                }
+            },
+            editor: {
+                include: false,
+                id: 'editor',
+                type: 'titlePane',
+                path: 'gis/dijit/Editor',
+                title: i18n.viewer.widgets.editor,
+                iconClass: 'fas fa-fw fa-pencil-alt',
+                open: false,
+                position: 8,
+                options: {
+                    map: true,
+                    mapClickMode: true,
+                    editorLayerInfos: true,
+                    settings: {
+                        toolbarVisible: true,
+                        showAttributesOnClick: true,
+                        enableUndoRedo: true,
+                        createOptions: {
+                            polygonDrawTools: ['freehandpolygon', 'autocomplete']
+                        },
+                        toolbarOptions: {
+                            reshapeVisible: true,
+                            cutVisible: true,
+                            mergeVisible: true
+                        }
+                    }
+                }
+            },
+            streetview: {
+                include: false,
+                id: 'streetview',
+                type: 'titlePane',
+                canFloat: true,
+                position: 9,
+                path: 'gis/dijit/StreetView',
+                title: i18n.viewer.widgets.streetview,
+                iconClass: 'fas fa-fw fa-street-view',
+                paneOptions: {
+                    resizable: true,
+                    resizeOptions: {
+                        minSize: {
+                            w: 250,
+                            h: 250
+                        }
+                    }
+                },
+                options: {
+                    map: true,
+                    mapClickMode: true,
+                    mapRightClickMenu: true
+                }
+            },
+            locale: {
+                include: false,
+                type: has('phone') ? 'titlePane' : 'domNode',
+                id: 'locale',
+                position: 0,
+                srcNodeRef: 'geocodeDijit',
+                path: 'gis/dijit/Locale',
+                title: i18n.viewer.widgets.locale,
+                iconClass: 'fas fa-fw fa-flag',
+                options: {
+                    style: has('phone') ? null : 'margin-left: 30px;'
+                }
+            },
+            help: {
+                include: false,
+                id: 'help',
+                type: 'floating',
+                path: 'gis/dijit/Help',
+                title: i18n.viewer.widgets.help,
+                iconClass: 'fas fa-fw fa-info-circle',
+                paneOptions: {
+                    draggable: false,
+                    html: '<a href="#"><i class="fas fa-fw fa-info-circle"></i>link</a>'.replace('link', i18n.viewer.widgets.help),
+                    domTarget: 'helpDijit',
+                    style: 'height:345px;width:450px;'
+                },
+                options: {}
+            }
+
         }
     };
 });

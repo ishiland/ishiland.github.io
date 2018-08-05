@@ -1,15 +1,1 @@
-#graphicSymbolEditor {
-
-}
-
-#graphicSymbolEditor #graphicSymbolEditorActionBar {
-    text-align: right;
-}
-
-#graphicSymbolEditor_underlay {
-    display: none;
-}
-
-#graphicSymbolEditor .dijitDialogCloseIcon {
-    display: none !important;
-}
+#graphicSymbolEditor #graphicSymbolEditorActionBar{text-align:right}#graphicSymbolEditor_underlay{display:none}#graphicSymbolEditor .dijitDialogCloseIcon{display:none!important}

@@ -37,7 +37,6 @@ define({
                 bookmarks: 'Bookmarks',
                 directions: 'Directions',
                 draw: 'Draw',
-                advancedDraw:'Advanced Draw',
                 editor: 'Editor',
                 find: 'Find',
                 help: 'Help',

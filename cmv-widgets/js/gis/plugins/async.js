@@ -1,18 +1,7 @@
-define(function () {
+/*  ConfigurableMapViewerCMV
+ *  version 2.0.0-beta.2
+ *  Project: https://cmv.io/
+ */
 
-    var cb = '_asyncApiLoaderCallback';
-    return {
-        load: function (param, req, loadCallback) {
-            if (!cb) {
-                return;
-            } else {
-                window.dojoConfig[cb] = function () {
-                    delete window.dojoConfig[cb];
-                    cb = null;
-                    loadCallback();
-                };
-                require([param + '&callback=dojoConfig.' + cb]);
-            }
-        }
-    };
-});
+define(function(){var d="_asyncApiLoaderCallback";return{load:function(o,n,i){d&&(window.dojoConfig[d]=function(){delete window.dojoConfig[d],d=null,i()},require([o+"&callback=dojoConfig."+d]))}}});
+//# sourceMappingURL=async.js.map
