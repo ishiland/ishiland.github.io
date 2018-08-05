@@ -1,7 +1,291 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'dojo/on',
+    'dojo/dom',
+    'dojo/_base/array',
+    'dojo/Deferred',
 
-define(["dojo/_base/declare","dojo/_base/lang","dojo/on","dojo/dom","dojo/_base/array","dojo/Deferred","esri/map","esri/IdentityManager"],function(e,l,h,s,n,o,y){return e(null,{postConfig:function(){return this.mapDeferred=new o,this.inherited(arguments)},startup:function(){this.ignoreDynamicGroupVisibility=!1!==this.config.ignoreDynamicGroupVisibility,this.inherited(arguments),this.layoutDeferred.then(l.hitch(this,"initMapAsync"))},initMapAsync:function(){var e=new o,r=[];return this.createMap(r).then(l.hitch(this,"_createMapResult",e,r)),e.then(l.hitch(this,"initMapComplete")),e},createMap:function(r){var e=this.inherited(arguments);if(e)return e;var i=new o,t=s.byId(this.config.layout.map)||"mapCenter";this.map=new y(t,this.config.mapOptions);var a=this.inherited(arguments);return a?a.then(function(e){e&&(r=r.concat(e)),i.resolve(r)}):i.resolve(r),i},_createMapResult:function(e,r){return this.map?(!this.config.webMapId&&this.config.mapOptions&&this.config.mapOptions.basemap?this.map.on("load",l.hitch(this,"_initLayers",r)):this._initLayers(r),this.config.operationalLayers&&0<this.config.operationalLayers.length?h.once(this.map,"layers-add-result",l.hitch(this,"_onLayersAddResult",e,r)):e.resolve(r)):e.resolve(r),e},_onLayersAddResult:function(e,r,i){n.forEach(i.layers,function(e){!0!==e.success&&r.push(e.error)},this),e.resolve(r)},_initLayers:function(i){this.layers=[];var t={csv:"esri/layers/CSVLayer",dataadapter:"esri/layers/DataAdapterFeatureLayer",dynamic:"esri/layers/ArcGISDynamicMapServiceLayer",feature:"esri/layers/FeatureLayer",georss:"esri/layers/GeoRSSLayer",graphics:"esri/layers/GraphicsLayer",image:"esri/layers/ArcGISImageServiceLayer",imagevector:"esri/layers/ArcGISImageServiceVectorLayer",kml:"esri/layers/KMLLayer",mapimage:"esri/layers/MapImageLayer",osm:"esri/layers/OpenStreetMapLayer",raster:"esri/layers/RasterLayer",stream:"esri/layers/StreamLayer",tiled:"esri/layers/ArcGISTiledMapServiceLayer",vectortile:"esri/layers/VectorTileLayer",webtiled:"esri/layers/WebTiledLayer",wfs:"esri/layers/WFSLayer",wms:"esri/layers/WMSLayer",wmts:"esri/layers/WMTSLayer"};t=l.mixin(t,this.config.layerTypes||{});var a=[];n.forEach(this.config.operationalLayers,function(e){var r=t[e.type];r?a.push(r):i.push('Layer type "'+e.type+'" is not supported: ')},this),require(a,l.hitch(this,function(){n.forEach(this.config.operationalLayers,function(e){var r=t[e.type];r&&require([r],l.hitch(this,"_initLayer",e))},this),this.map.addLayers(this.layers)}))},_initLayer:function(e,r){var i=null;try{i=e.url?new r(e.url,e.options):new r(e.options),this.layers.unshift(i)}catch(e){this.handleError({source:"_MapMixin._initLayer",error:e})}var t=!1;if(void 0!==e.legendLayerInfos&&void 0!==e.legendLayerInfos.exclude&&(t=e.legendLayerInfos.exclude),!t){var a={};void 0!==e.legendLayerInfos&&void 0!==e.legendLayerInfos.layerInfo&&(a=e.legendLayerInfos.layerInfo);var s=l.mixin({layer:i,title:e.title||null},a);this.legendLayerInfos.unshift(s)}var n=l.mixin({ignoreDynamicGroupVisibility:this.ignoreDynamicGroupVisibility},e.layerControlLayerInfos);if(this.layerControlLayerInfos.unshift({layer:i,type:e.type,title:e.title,controlOptions:n}),"feature"===e.type){var o={featureLayer:i};e.editorLayerInfos&&l.mixin(o,e.editorLayerInfos),!0!==o.exclude&&this.editorLayerInfos.push(o)}if("dynamic"===e.type&&this.ignoreDynamicGroupVisibility&&h(i,"load",l.hitch(this,"removeGroupLayers")),"dynamic"===e.type||"feature"===e.type){var y={layer:i,title:e.title,ignoreDynamicGroupVisibility:this.ignoreDynamicGroupVisibility};e.identifyLayerInfos&&l.mixin(y,e.identifyLayerInfos),!0!==y.exclude&&this.identifyLayerInfos.push(y)}},removeGroupLayers:function(e){var i=[],t=!1,a=e.layer,r=a.visibleLayers||a._defaultVisibleLayers;n.forEach(r,function(r){var e=n.filter(a.layerInfos,function(e){return e.id===r})[0];e&&null===e.subLayerIds?i.push(r):t=!0}),0<i.length&&t&&a.setVisibleLayers(i)},initMapComplete:function(e){e&&0<e.length&&this.handleError({source:"Controller",error:e.join(", ")}),this.map&&(this.map.on("resize",function(e){var r=e.target.extent.getCenter();setTimeout(function(){e.target.centerAt(r)},100)}),this.mapDeferred.resolve(this.map))},initMapError:function(e){this.handleError({source:"Controller",error:e})},resizeMap:function(){this.map&&this.map.resize()},getMapHeight:function(){return this.map?this.map.height:0}})});
-//# sourceMappingURL=_MapMixin.js.map
+    'esri/map',
+
+    'esri/IdentityManager'
+
+], function (
+    declare,
+    lang,
+    on,
+    dom,
+    array,
+    Deferred,
+
+    Map
+) {
+
+    return declare(null, {
+
+        postConfig: function () {
+            this.mapDeferred = new Deferred();
+            return this.inherited(arguments);
+        },
+
+        startup: function () {
+            // ignore visibility of group layers in dynamic layers?
+            this.ignoreDynamicGroupVisibility = (this.config.ignoreDynamicGroupVisibility === false) ? false : true;
+            this.inherited(arguments);
+            this.layoutDeferred.then(lang.hitch(this, 'initMapAsync'));
+        },
+
+        initMapAsync: function () {
+            var returnDeferred = new Deferred();
+            var returnWarnings = [];
+
+            this.createMap(returnWarnings).then(
+                lang.hitch(this, '_createMapResult', returnDeferred, returnWarnings)
+            );
+            returnDeferred.then(lang.hitch(this, 'initMapComplete'));
+            return returnDeferred;
+        },
+
+        createMap: function (returnWarnings) {
+
+            // mixins override the default createMap method and return a deferred
+            var result = this.inherited(arguments);
+            if (result) {
+                return result;
+            }
+
+            // otherwise we can create the map
+            var mapDeferred = new Deferred(),
+                container = dom.byId(this.config.layout.map) || 'mapCenter';
+
+            this.map = new Map(container, this.config.mapOptions);
+
+            // let some other mixins modify or add map items async
+            var wait = this.inherited(arguments);
+            if (wait) {
+                wait.then(function (warnings) {
+                    if (warnings) {
+                        returnWarnings = returnWarnings.concat(warnings);
+                    }
+                    mapDeferred.resolve(returnWarnings);
+                });
+            } else {
+                mapDeferred.resolve(returnWarnings);
+            }
+            return mapDeferred;
+        },
+
+        _createMapResult: function (returnDeferred, returnWarnings) {
+            if (this.map) {
+                if (!this.config.webMapId && this.config.mapOptions && this.config.mapOptions.basemap) {
+                    this.map.on('load', lang.hitch(this, '_initLayers', returnWarnings));
+                } else {
+                    this._initLayers(returnWarnings);
+                }
+
+                if (this.config.operationalLayers && this.config.operationalLayers.length > 0) {
+                    on.once(this.map, 'layers-add-result', lang.hitch(this, '_onLayersAddResult', returnDeferred, returnWarnings));
+                } else {
+                    returnDeferred.resolve(returnWarnings);
+                }
+            } else {
+                returnDeferred.resolve(returnWarnings);
+            }
+            return returnDeferred;
+        },
+
+        _onLayersAddResult: function (returnDeferred, returnWarnings, lyrsResult) {
+            array.forEach(lyrsResult.layers, function (addedLayer) {
+                if (addedLayer.success !== true) {
+                    returnWarnings.push(addedLayer.error);
+                }
+            }, this);
+            returnDeferred.resolve(returnWarnings);
+        },
+
+        _initLayers: function (returnWarnings) {
+            this.layers = [];
+            var layerTypes = {
+                csv: 'esri/layers/CSVLayer',
+                dataadapter: 'esri/layers/DataAdapterFeatureLayer', //untested
+                dynamic: 'esri/layers/ArcGISDynamicMapServiceLayer',
+                feature: 'esri/layers/FeatureLayer',
+                georss: 'esri/layers/GeoRSSLayer',
+                graphics: 'esri/layers/GraphicsLayer',
+                image: 'esri/layers/ArcGISImageServiceLayer',
+                imagevector: 'esri/layers/ArcGISImageServiceVectorLayer',
+                kml: 'esri/layers/KMLLayer',
+                mapimage: 'esri/layers/MapImageLayer', //untested
+                osm: 'esri/layers/OpenStreetMapLayer',
+                raster: 'esri/layers/RasterLayer',
+                stream: 'esri/layers/StreamLayer',
+                tiled: 'esri/layers/ArcGISTiledMapServiceLayer',
+                vectortile: 'esri/layers/VectorTileLayer',
+                webtiled: 'esri/layers/WebTiledLayer',
+                wfs: 'esri/layers/WFSLayer',
+                wms: 'esri/layers/WMSLayer',
+                wmts: 'esri/layers/WMTSLayer' //untested
+            };
+            // add any user-defined layer types such as https://github.com/Esri/geojson-layer-js
+            layerTypes = lang.mixin(layerTypes, this.config.layerTypes || {});
+            // loading all the required modules first ensures the layer order is maintained
+            var modules = [];
+            array.forEach(this.config.operationalLayers, function (layer) {
+                var type = layerTypes[layer.type];
+                if (type) {
+                    modules.push(type);
+                } else {
+                    returnWarnings.push('Layer type "' + layer.type + '" is not supported: ');
+                }
+            }, this);
+
+            require(modules, lang.hitch(this, function () {
+                array.forEach(this.config.operationalLayers, function (layer) {
+                    var type = layerTypes[layer.type];
+                    if (type) {
+                        require([type], lang.hitch(this, '_initLayer', layer));
+                    }
+                }, this);
+                this.map.addLayers(this.layers);
+            }));
+        },
+
+        _initLayer: function (layer, Layer) {
+            var l = null;
+            try {
+                if (layer.url) {
+                    l = new Layer(layer.url, layer.options);
+                } else {
+                    l = new Layer(layer.options);
+                }
+                this.layers.unshift(l); //unshift instead of push to keep layer ordering on map intact
+            } catch (e) {                
+                this.handleError({
+                    source: '_MapMixin._initLayer',
+                    error: e
+                });
+            }
+
+            //Legend LayerInfos array
+            var excludeLayerFromLegend = false;
+            if (typeof layer.legendLayerInfos !== 'undefined' && typeof layer.legendLayerInfos.exclude !== 'undefined') {
+                excludeLayerFromLegend = layer.legendLayerInfos.exclude;
+            }
+            if (!excludeLayerFromLegend) {
+                var configuredLayerInfo = {};
+                if (typeof layer.legendLayerInfos !== 'undefined' && typeof layer.legendLayerInfos.layerInfo !== 'undefined') {
+                    configuredLayerInfo = layer.legendLayerInfos.layerInfo;
+                }
+                var layerInfo = lang.mixin({
+                    layer: l,
+                    title: layer.title || null
+                }, configuredLayerInfo);
+                this.legendLayerInfos.unshift(layerInfo); //unshift instead of push to keep layer ordering in legend intact
+            }
+
+            //LayerControl LayerInfos array
+            var layerControlOptions = lang.mixin({
+                ignoreDynamicGroupVisibility: this.ignoreDynamicGroupVisibility
+            }, layer.layerControlLayerInfos);
+            this.layerControlLayerInfos.unshift({ //unshift instead of push to keep layer ordering in LayerControl intact
+                layer: l,
+                type: layer.type,
+                title: layer.title,
+                controlOptions: layerControlOptions
+            });
+
+            if (layer.type === 'feature') {
+                var options = {
+                    featureLayer: l
+                };
+                if (layer.editorLayerInfos) {
+                    lang.mixin(options, layer.editorLayerInfos);
+                }
+                if (options.exclude !== true) {
+                    this.editorLayerInfos.push(options);
+                }
+            }
+
+            if (layer.type === 'dynamic' && this.ignoreDynamicGroupVisibility) {
+                on(l, 'load', lang.hitch(this, 'removeGroupLayers'));
+            }
+
+            if (layer.type === 'dynamic' || layer.type === 'feature') {
+                var idOptions = {
+                    layer: l,
+                    title: layer.title,
+                    ignoreDynamicGroupVisibility: this.ignoreDynamicGroupVisibility
+                };
+                if (layer.identifyLayerInfos) {
+                    lang.mixin(idOptions, layer.identifyLayerInfos);
+                }
+                if (idOptions.exclude !== true) {
+                    this.identifyLayerInfos.push(idOptions);
+                }
+            }
+        },
+
+        removeGroupLayers: function (res) {
+            var visibleLayers = [], groupRemoved = false, layer = res.layer,
+                originalVisibleLayers = layer.visibleLayers || layer._defaultVisibleLayers;
+            array.forEach(originalVisibleLayers, function (subLayerId) {
+                var subLayerInfo = array.filter(layer.layerInfos, function (sli) {
+                    return sli.id === subLayerId;
+                })[0];
+                if (subLayerInfo && subLayerInfo.subLayerIds === null) {
+                    visibleLayers.push(subLayerId);
+                } else {
+                    groupRemoved = true;
+                }
+            });
+
+            if (visibleLayers.length > 0 && groupRemoved) {
+                layer.setVisibleLayers(visibleLayers);
+            }
+        },
+
+        initMapComplete: function (warnings) {
+            if (warnings && warnings.length > 0) {
+                this.handleError({
+                    source: 'Controller',
+                    error: warnings.join(', ')
+                });
+            }
+
+            if (this.map) {
+
+                this.map.on('resize', function (evt) {
+                    var pnt = evt.target.extent.getCenter();
+                    setTimeout(function () {
+                        evt.target.centerAt(pnt);
+                    }, 100);
+                });
+
+                // resolve the map deferred
+                this.mapDeferred.resolve(this.map);
+            }
+
+        },
+
+        initMapError: function (err) {
+            this.handleError({
+                source: 'Controller',
+                error: err
+            });
+        },
+
+        resizeMap: function () {
+            if (this.map) {
+                this.map.resize();
+            }
+        },
+
+        getMapHeight: function () {
+            if (this.map) {
+                return this.map.height;
+            } 
+            return 0;
+            
+        }
+    });
+});

@@ -1,7 +1,281 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'dojo/_base/array',
+    'dojo/on',
+    'dojo/query',
+    'dojo/dom-class',
+    'dojo/dom-style',
+    'dojo/dom-attr',
+    'dojo/fx',
+    'dojo/html',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dojo/text!./templates/Folder.html'
+], function (
+    declare,
+    lang,
+    array,
+    on,
+    query,
+    domClass,
+    domStyle,
+    domAttr,
+    fx,
+    html,
+    WidgetBase,
+    TemplatedMixin,
+    folderTemplate
+) {
+    var _DynamicFolder = declare([WidgetBase, TemplatedMixin], {
+        control: null,
+        sublayerInfo: null,
+        icons: null,
+        // ^args
+        templateString: folderTemplate,
+        _expandClickHandler: null,
+        _handlers: [],
 
-define(["dojo/_base/declare","dojo/_base/lang","dojo/_base/array","dojo/on","dojo/query","dojo/dom-class","dojo/dom-style","dojo/dom-attr","dojo/fx","dojo/html","dijit/_WidgetBase","dijit/_TemplatedMixin","dojo/text!./templates/Folder.html"],function(e,a,s,n,t,c,i,l,r,o,d,h,u){return e([d,h],{control:null,sublayerInfo:null,icons:null,templateString:u,_expandClickHandler:null,_handlers:[],postCreate:function(){this.inherited(arguments),this._checkHideControl();var t=this.checkNode;l.set(t,"data-sublayer-id",this.sublayerInfo.id),l.set(t,"data-layer-folder",!0),c.add(t,this.control.layer.id+"-layerControlSublayerCheck"),this._handlers.push(n(t,"click",a.hitch(this,function(e){e.stopPropagation&&e.stopPropagation(),this.control.controlOptions.ignoreDynamicGroupVisibility?this._hasAnyInvisibleLayer()?this._setFolderCheckbox(!0,t):this._setFolderCheckbox(!1,t):this._setFolderCheckbox(!this._isVisible(),t),this._checkboxScaleRange()}))),o.set(this.labelNode,this.sublayerInfo.name),this._expandClick(),0===this.sublayerInfo.minScale&&0===this.sublayerInfo.maxScale||(this._checkboxScaleRange(),this._handlers.push(this.control.layer.getMap().on("zoom-end",a.hitch(this,"_checkboxScaleRange"))))},_expandClick:function(){var o=this.icons;this._handlers.push(this._expandClickHandler=n(this.expandClickNode,"click",a.hitch(this,function(){var e=this.expandNode,t=this.expandIconNode;"none"===i.get(e,"display")?(r.wipeIn({node:e,duration:300}).play(),c.replace(t,o.folderOpen,o.folder)):(r.wipeOut({node:e,duration:300}).play(),c.replace(t,o.folder,o.folderOpen))})))},_setFolderCheckbox:function(o,e,t){var n=this.icons,i=o?"checked":"unchecked",r=this._getSubLayerNodes();e=e||this.checkNode,this.control.controlOptions.ignoreDynamicGroupVisibility?s.forEach(r,a.hitch(this,function(e){if(l.get(e,"data-layer-folder")){var t=this._getFolderControl(e);t&&t._setFolderCheckbox(o,e,!0)}else l.set(e,"data-checked",i),o?c.replace(e,n.checked,n.unchecked):c.replace(e,n.unchecked,n.checked)})):(l.set(e,"data-checked",i),o?c.replace(e,n.checked,n.unchecked):c.replace(e,n.unchecked,n.checked)),t||this.control._setVisibleLayers()},_hasAnyVisibleLayer:function(){var e=this._getSubLayerNodes();return s.some(e,a.hitch(this,function(e){if(l.get(e,"data-layer-folder")){var t=this._getFolderControl(e);return!t||t._hasAnyVisibleLayer()}return"checked"===l.get(e,"data-checked")}))},_hasAnyInvisibleLayer:function(){var e=this._getSubLayerNodes();return s.some(e,a.hitch(this,function(e){if(l.get(e,"data-layer-folder")){var t=this._getFolderControl(e);return!t||t._hasAnyInvisibleLayer()}return"checked"!==l.get(e,"data-checked")}))},_getSubLayerNodes:function(){var o=this.control.controlOptions.layerIds||[],n=[];this.control.controlOptions.subLayerInfos&&!this.control.controlOptions.includeUnspecifiedLayers&&(n=s.map(this.control.controlOptions.subLayerInfos,function(e){return e.id}));var e=t("."+this.control.layer.id+"-layerControlSublayerCheck",this.domNode);return s.filter(e,a.hitch(this,function(e){var t=parseInt(l.get(e,"data-sublayer-id"),10);return!(s.indexOf(this.sublayerInfo.subLayerIds,t)<0)&&(!(o.length&&s.indexOf(o,t)<0)&&!(n.length&&s.indexOf(n,t)<0))}))},_getSubLayerControls:function(){var t=this.sublayerInfo.id;return s.filter(this.control._sublayerControls,function(e){return e.parentLayerId===t})},_getFolderControls:function(){var t=this.sublayerInfo.id;return s.filter(this.control._folderControls,function(e){return e.parentLayerId===t})},_getFolderControl:function(e){var t=parseInt(l.get(e,"data-sublayer-id"),10),o=s.filter(this.control._folderControls,function(e){return e.sublayerInfo.id===t});return o.length?o[0]:null},_checkFolderVisibility:function(){var e=this.checkNode,t=this.icons,o=this._hasAnyVisibleLayer(),n=this._hasAnyInvisibleLayer();c.remove(e,t.checked),c.remove(e,t.unchecked),c.remove(e,t.indeterminate),o&&n?(l.set(e,"data-checked","indeterminate"),c.add(e,t.indeterminate)):o?(l.set(e,"data-checked","checked"),c.add(e,t.checked)):(l.set(e,"data-checked","unchecked"),c.add(e,t.unchecked))},_checkboxScaleRange:function(){var e=this.checkNode,t=this.control.layer.getMap().getScale(),o=this.sublayerInfo.minScale,n=this.sublayerInfo.maxScale;c.remove(e,"layerControlCheckIconOutScale"),(0!==o&&o<t||0!==n&&t<n)&&c.add(e,"layerControlCheckIconOutScale")},_checkHideControl:function(){if(this.control.controlOptions.subLayerInfos&&!this.control.controlOptions.includeUnspecifiedLayers){var e=s.map(this.control.controlOptions.subLayerInfos,function(e){return e.id});s.indexOf(e,this.sublayerInfo.id)<0&&c.add(this.domNode,"layerControlHidden")}this.control.controlOptions.layerIds&&s.indexOf(this.control.controlOptions.layerIds,this.sublayerInfo.id)<0&&c.add(this.domNode,"layerControlHidden")},_isVisible:function(){return"checked"===l.get(this.checkNode,"data-checked")},destroy:function(){this.inherited(arguments),this._handlers.forEach(function(e){e.remove()})}})});
-//# sourceMappingURL=_DynamicFolder.js.map
+        postCreate: function () {
+            this.inherited(arguments);
+            this._checkHideControl();
+            var checkNode = this.checkNode;
+            domAttr.set(checkNode, 'data-sublayer-id', this.sublayerInfo.id);
+            domAttr.set(checkNode, 'data-layer-folder', true);
+            domClass.add(checkNode, this.control.layer.id + '-layerControlSublayerCheck');
+
+            this._handlers.push(on(checkNode, 'click', lang.hitch(this, function (event) {
+
+                // prevent click event from bubbling
+                if (event.stopPropagation) {
+                    event.stopPropagation();
+                }
+
+                if (this.control.controlOptions.ignoreDynamicGroupVisibility) {
+                    if (!this._hasAnyInvisibleLayer()) {
+                        this._setFolderCheckbox(false, checkNode);
+                    } else {
+                        this._setFolderCheckbox(true, checkNode);
+                    }
+                } else {
+                    this._setFolderCheckbox(!this._isVisible(), checkNode);
+                }
+
+                this._checkboxScaleRange();
+            })));
+            html.set(this.labelNode, this.sublayerInfo.name);
+            this._expandClick();
+            if (this.sublayerInfo.minScale !== 0 || this.sublayerInfo.maxScale !== 0) {
+                this._checkboxScaleRange();
+                this._handlers.push(this.control.layer.getMap().on('zoom-end', lang.hitch(this, '_checkboxScaleRange')));
+            }
+        },
+
+        // add on event to expandClickNode
+        _expandClick: function () {
+            var i = this.icons;
+            this._handlers.push(this._expandClickHandler = on(this.expandClickNode, 'click', lang.hitch(this, function () {
+                var expandNode = this.expandNode,
+                    iconNode = this.expandIconNode;
+                if (domStyle.get(expandNode, 'display') === 'none') {
+                    fx.wipeIn({
+                        node: expandNode,
+                        duration: 300
+                    }).play();
+                    domClass.replace(iconNode, i.folderOpen, i.folder);
+                } else {
+                    fx.wipeOut({
+                        node: expandNode,
+                        duration: 300
+                    }).play();
+                    domClass.replace(iconNode, i.folder, i.folderOpen);
+                }
+            })));
+        },
+
+        // toggles visibility of all sub layers
+        _setFolderCheckbox: function (checked, checkNode, noPublish) {
+            var i = this.icons,
+                dataChecked = (checked) ? 'checked' : 'unchecked',
+                slNodes = this._getSubLayerNodes();
+            checkNode = checkNode || this.checkNode;
+
+            if (this.control.controlOptions.ignoreDynamicGroupVisibility) {
+                array.forEach(slNodes, lang.hitch(this, function (node) {
+                    // child is folder
+                    if (domAttr.get(node, 'data-layer-folder')) {
+                        var folderControl = this._getFolderControl(node);
+                        if (folderControl) {
+                            folderControl._setFolderCheckbox(checked, node, true);
+                        }
+                    // child is sub layer
+                    } else {
+                        domAttr.set(node, 'data-checked', dataChecked);
+                        if (checked) {
+                            domClass.replace(node, i.checked, i.unchecked);
+                        } else {
+                            domClass.replace(node, i.unchecked, i.checked);
+                        }
+                    }
+                }));
+            } else {
+                domAttr.set(checkNode, 'data-checked', dataChecked);
+                if (checked) {
+                    domClass.replace(checkNode, i.checked, i.unchecked);
+                } else {
+                    domClass.replace(checkNode, i.unchecked, i.checked);
+                }
+            }
+
+            if (!noPublish) {
+                this.control._setVisibleLayers();
+            }
+        },
+
+        _hasAnyVisibleLayer: function () {
+            var slNodes = this._getSubLayerNodes();
+            return array.some(slNodes, lang.hitch(this, function (node) {
+                if (domAttr.get(node, 'data-layer-folder')) {
+                    var folderControl = this._getFolderControl(node);
+                    if (folderControl) {
+                        return folderControl._hasAnyVisibleLayer();
+                    }
+                    return true;
+                }
+                return (domAttr.get(node, 'data-checked') === 'checked');
+            }));
+        },
+
+        _hasAnyInvisibleLayer: function () {
+            var slNodes = this._getSubLayerNodes();
+            return array.some(slNodes, lang.hitch(this, function (node) {
+                if (domAttr.get(node, 'data-layer-folder')) {
+                    var folderControl = this._getFolderControl(node);
+                    if (folderControl) {
+                        return folderControl._hasAnyInvisibleLayer();
+                    }
+                    return true;
+                }
+                return (domAttr.get(node, 'data-checked') !== 'checked');
+            }));
+        },
+
+        _getSubLayerNodes: function () {
+            var layerIds = this.control.controlOptions.layerIds || [];
+            var subLayerInfos = [];
+            if (this.control.controlOptions.subLayerInfos && !this.control.controlOptions.includeUnspecifiedLayers) {
+                subLayerInfos = array.map(this.control.controlOptions.subLayerInfos, function (sli) {
+                    return sli.id;
+                });
+            }
+
+            var subLayerNodes = query('.' + this.control.layer.id + '-layerControlSublayerCheck', this.domNode);
+            return array.filter(subLayerNodes, lang.hitch(this, function (node) {
+                var subLayerID = parseInt(domAttr.get(node, 'data-sublayer-id'), 10);
+                // is the sublayer contained in this folder
+                if (array.indexOf(this.sublayerInfo.subLayerIds, subLayerID) < 0) {
+                    return false;
+                // is the sublayer included in layer's layerIds (if they are defined)
+                } else if (layerIds.length && array.indexOf(layerIds, subLayerID) < 0) {
+                    return false;
+                // is the sublayer included in layer's subLayerInfos (if they are defined)
+                } else if (subLayerInfos.length && array.indexOf(subLayerInfos, subLayerID) < 0) {
+                    return false;
+                }
+                return true;
+            }));
+        },
+
+        _getSubLayerControls: function () {
+            var parentLayerId = this.sublayerInfo.id;
+            return array.filter(this.control._sublayerControls, function (control) {
+                return (control.parentLayerId === parentLayerId);
+            });
+        },
+
+        _getFolderControls: function () {
+            var parentLayerId = this.sublayerInfo.id;
+            return array.filter(this.control._folderControls, function (control) {
+                return (control.parentLayerId === parentLayerId);
+            });
+        },
+
+        _getFolderControl: function (node) {
+            var subLayerID = parseInt(domAttr.get(node, 'data-sublayer-id'), 10);
+            var controls = array.filter(this.control._folderControls, function (control) {
+                return (control.sublayerInfo.id === subLayerID);
+            });
+            if (controls.length) {
+                return controls[0];
+            }
+            return null;
+        },
+
+        // set visibility of folder (group layer) based on the visibility
+        // of children sub-layers and folders
+        _checkFolderVisibility: function () {
+            var checkNode = this.checkNode,
+                i = this.icons;
+
+            var hasVisible = this._hasAnyVisibleLayer();
+            var hasHidden = this._hasAnyInvisibleLayer();
+
+            domClass.remove(checkNode, i.checked);
+            domClass.remove(checkNode, i.unchecked);
+            domClass.remove(checkNode, i.indeterminate);
+
+            // indeterminate - both visible and invisible layers in group
+            if (hasVisible && hasHidden) {
+                domAttr.set(checkNode, 'data-checked', 'indeterminate');
+                domClass.add(checkNode, i.indeterminate);
+            } else if (hasVisible) {
+                domAttr.set(checkNode, 'data-checked', 'checked');
+                domClass.add(checkNode, i.checked);
+            } else {
+                domAttr.set(checkNode, 'data-checked', 'unchecked');
+                domClass.add(checkNode, i.unchecked);
+            }
+        },
+
+        // check scales and add/remove disabled classes from checkbox
+        _checkboxScaleRange: function () {
+            var node = this.checkNode,
+                scale = this.control.layer.getMap().getScale(),
+                min = this.sublayerInfo.minScale,
+                max = this.sublayerInfo.maxScale;
+            domClass.remove(node, 'layerControlCheckIconOutScale');
+            if ((min !== 0 && scale > min) || (max !== 0 && scale < max)) {
+                domClass.add(node, 'layerControlCheckIconOutScale');
+            }
+        },
+
+
+        _checkHideControl: function () {
+            // Should the control be visible or hidden (depends on subLayerInfos)?
+            if (this.control.controlOptions.subLayerInfos && !this.control.controlOptions.includeUnspecifiedLayers) {
+                var subLayerInfos = array.map(this.control.controlOptions.subLayerInfos, function (sli) {
+                    return sli.id;
+                });
+                if (array.indexOf(subLayerInfos, this.sublayerInfo.id) < 0) {
+                    domClass.add(this.domNode, 'layerControlHidden');
+                }
+            }
+            // Should the control be visible or hidden?
+            if (this.control.controlOptions.layerIds && array.indexOf(this.control.controlOptions.layerIds, this.sublayerInfo.id) < 0) {
+                domClass.add(this.domNode, 'layerControlHidden');
+            }
+        },
+
+        _isVisible: function () {
+            return (domAttr.get(this.checkNode, 'data-checked') === 'checked');
+        },
+
+        destroy: function () {
+            this.inherited(arguments);
+            this._handlers.forEach(function (h) {
+                h.remove();
+            });
+        }
+    });
+    return _DynamicFolder;
+});

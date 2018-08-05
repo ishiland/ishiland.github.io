@@ -1,7 +1,11 @@
 /*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
+ *  version 1.3.4
+ *  Project: http://cmv.io/
  */
 
-define({root:{setScaleButton:"Set Map Scale"}});
-//# sourceMappingURL=MyInfo.js.map
+define({
+    root: {
+        setScaleButton: 'Set Map Scale'
+    }
+});
+//# sourceMappingURL=Export.map

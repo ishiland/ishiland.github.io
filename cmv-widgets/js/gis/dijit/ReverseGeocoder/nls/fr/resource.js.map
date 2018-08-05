@@ -1,1 +1,0 @@
-{"version":3,"sources":["resource.js"],"names":["define","labels","address","neighborhood","city","subregion","region","postalCode","countryCode","locatorName","getAddressHere"],"mappings":";;;;;AAAAA,OAAQ,CACJC,OAAQ,CACJC,QAAS,UACTC,aAAc,WACdC,KAAM,QACNC,UAAW,cACXC,OAAQ,SACRC,WAAY,cACZC,YAAa,eACbC,YAAa,sBACbC,eAAgB","file":"resource.js"}

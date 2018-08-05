@@ -1,7 +1,598 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dijit/_WidgetsInTemplateMixin',
+    'dojo/dom-construct',
+    'dojo/_base/lang',
+    'dojo/_base/array',
+    'dojo/on',
+    'dojo/keys',
+    'dojo/dom-style',
+    'dojo/store/Memory',
+    'dgrid/OnDemandGrid',
+    'dgrid/Selection',
+    'dgrid/Keyboard',
+    'dgrid/extensions/ColumnResizer',
+    'esri/layers/GraphicsLayer',
+    'esri/symbols/jsonUtils',
+    'esri/graphicsUtils',
+    'esri/tasks/FindTask',
+    'esri/tasks/FindParameters',
+    'esri/geometry/Extent',
+    'dojo/text!./Find/templates/Find.html',
+    'dojo/i18n!./Find/nls/resource',
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dijit/_WidgetsInTemplateMixin","dojo/dom-construct","dojo/_base/lang","dojo/_base/array","dojo/on","dojo/keys","dojo/dom-style","dojo/store/Memory","dgrid/OnDemandGrid","dgrid/Selection","dgrid/Keyboard","dgrid/extensions/ColumnResizer","esri/layers/GraphicsLayer","esri/symbols/jsonUtils","esri/graphicsUtils","esri/tasks/FindTask","esri/tasks/FindParameters","esri/geometry/Extent","dojo/text!./Find/templates/Find.html","dojo/i18n!./Find/nls/resource","dijit/form/Form","dijit/form/DropDownButton","dijit/TooltipDialog","dijit/form/FilteringSelect","dijit/form/ValidationTextBox","dijit/form/CheckBox","dijit/form/Button","xstyle/css!./Find/css/Find.css"],function(t,e,s,i,r,o,n,l,a,h,u,d,c,y,p,f,m,S,g,G,x,v,b){return t([e,s,i],{widgetsInTemplate:!0,templateString:v,baseClass:"gis_AdvancedFindDijit",i18n:b,spatialReference:null,showOptionsButton:!1,zoomOptions:{select:!0,deselect:!1},defaultResultsSymbols:{point:{type:"esriSMS",style:"esriSMSCircle",size:25,color:[0,255,255,32],angle:0,xoffset:0,yoffset:0,outline:{type:"esriSLS",style:"esriSLSSolid",color:[0,255,255,255],width:2}},polyline:{type:"esriSLS",style:"esriSLSSolid",color:[0,255,255,255],width:3},polygon:{type:"esriSFS",style:"esriSFSSolid",color:[0,255,255,32],outline:{type:"esriSLS",style:"esriSLSSolid",color:[0,255,255,255],width:3}}},defaultSelectionSymbols:{point:{type:"esriSMS",style:"esriSMSCircle",size:25,color:[4,156,219,32],angle:0,xoffset:0,yoffset:0,outline:{type:"esriSLS",style:"esriSLSSolid",color:[4,156,219,255],width:2}},polyline:{type:"esriSLS",style:"esriSLSSolid",color:[4,156,219,255],width:3},polygon:{type:"esriSFS",style:"esriSFSSolid",color:[4,156,219,32],outline:{type:"esriSLS",style:"esriSLSSolid",color:[4,156,219,255],width:3}}},postCreate:function(){this.inherited(arguments),this.showOptionsButton&&h.set(this.optionsDropDownDijit.domNode,"display","inline-block"),this.initializeGlobalVariables(),this.addKeyUpHandlerToSearchInput(),this.initializeQueries(),this.updateSearchPrompt()},initializeGlobalVariables:function(){this.queryIdx=0,this.currentQueryEventHandlers=[],this.gridColumns=null,this.selectionMode||(this.selectionMode="single"),this.zoomExtentFactor||(this.zoomExtentFactor=1.5),this.spatialReference||(this.spatialReference=this.map.spatialReference.wkid),this.pointExtentSize||(this.pointExtentSize=4326===this.spatialReference?1e-4:25)},addKeyUpHandlerToSearchInput:function(){this.own(l(this.searchTextDijit,"keyup",o.hitch(this,function(e){e.keyCode===a.ENTER&&this.search()})))},initializeQueries:function(){var e=0,t=this.queries.length;for(e=0;e<t;e++)this.queries[e].id=e;if(this.querySelectDom.style.display="none",1<t){var s=new u({data:this.queries});this.querySelectDijit.set("store",s),this.querySelectDijit.set("value",this.queryIdx),this.querySelectDom.style.display="block"}},search:function(){this.userInputIsInvalid()?this.displayInvalidUserInputMessage():this.queryConfigurationIsInvalid()?this.displayInvalidQueryConfigurationMessage():(this.createOrResetResultsGrid(),this.displayFindMessage(this.i18n.searching),this.executeFindTask())},executeFindTask:function(){var e=this.getQueryInput().query.url,t=this.getFindParams();new g(e).execute(t,o.hitch(this,this.showResults))},getQueryInput:function(){return{query:this.queries[this.queryIdx]||{},searchText:this.searchTextDijit.get("value")}},queryConfigurationIsInvalid:function(){var e=this.getQueryInput().query;return!(e.url&&e.searchFields&&e.layerIds)},userInputIsInvalid:function(){return!(0!==this.getQueryInput().searchText.length&&!this.userInputLessThanMinLength())},userInputLessThanMinLength:function(){var e=this.getQueryInput();return!!(e.query.minChars&&e.searchText.length<e.query.minChars)},displayInvalidQueryConfigurationMessage:function(){this.displayFindMessage("There is a problem with the query configuration.")},displayInvalidUserInputMessage:function(){var e=this.getQueryInput().query.minChars;this.displayFindMessage("You must enter at least "+e+" characters.")},displayFindMessage:function(e){r.empty(this.findResultsNode),this.findResultsNode.innerHTML=e,this.findResultsNode.style.display="block"},getFindParams:function(){var e=this.getQueryInput(),t=new G;return t.returnGeometry=!0,t.layerIds=e.query.layerIds,t.searchFields=e.query.searchFields,t.layerDefinitions=e.query.layerDefs,t.searchText=e.searchText,t.contains=!this.containsSearchText.checked,t.outSpatialReference={wkid:this.spatialReference},t},createOrResetResultsGrid:function(){this.resultsGrid||(this.createResultsStore(),this.createResultsGrid(),this.attachStandardEventHandlersToResultsGrid()),this.clearResultsGrid(),this.clearFeatures(),this.resetResultsGridColumns(),this.resetResultsGridSort(),this.resetGridSelectionMode(),this.attachCustomEventHandlersToResultsGrid()},createResultsStore:function(){this.resultsStore||(this.resultsStore=new u({idProperty:"id",data:[]}))},createResultsGrid:function(){var e=t([d,y,c,p]);this.resultsGrid=new e({selectionMode:this.selectionMode,cellNavigation:!1,showHeader:!0,store:this.resultsStore},this.findResultsGrid),this.resultsGrid.startup()},resetResultsGridColumns:function(){if(this.resultsGrid){var e=this.queries[this.queryIdx].gridColumns||{layerName:"Layer",foundFieldName:"Field",value:"Result"};e instanceof Array&&(e=n.filter(e,function(e){return void 0===e.visible&&(e.visible=!0),e.visible})),this.resultsGrid.setColumns(e)}},resetResultsGridSort:function(){if(this.resultsGrid){var e=this.queries[this.queryIdx].sort||[{attribute:"value",descending:!1}];this.resultsGrid.set("sort",e)}},resetGridSelectionMode:function(){if(this.resultsGrid){var e=this.queries[this.queryIdx].selectionMode||this.selectionMode;this.resultsGrid.set("selectionMode",e)}},attachStandardEventHandlersToResultsGrid:function(){this.resultsGrid&&(this.own(this.resultsGrid.on("dgrid-select",o.hitch(this,"onResultsGridSelect"))),this.own(this.resultsGrid.on("dgrid-deselect",o.hitch(this,"onResultsGridDeselect"))),this.own(this.resultsGrid.on(".dgrid-row:dblclick",o.hitch(this,"onResultsGridRowClick"))))},attachCustomEventHandlersToResultsGrid:function(){if(this.resultsGrid){n.forEach(this.currentQueryEventHandlers,function(e){e.handle.remove()});var e=this.queries[this.queryIdx].customGridEventHandlers||[];n.forEach(e,o.hitch(this,function(e){e.handle=this.resultsGrid.on(e.event,o.hitch(this,e.handler))})),this.currentQueryEventHandlers=e}},showResults:function(e){var t=this.i18n.noResultsLabel;if(this.results=e,0<this.results.length){var s=1===this.results.length?"":this.i18n.resultsLabel.multipleResultsSuffix;t=this.results.length+" "+this.i18n.resultsLabel.labelPrefix+s+" "+this.i18n.resultsLabel.labelSuffix,this.createGraphicsLayerAndSymbols(),this.parseGridColumnProperties(),this.addResultsToGraphicsLayer(),this.zoomToGraphics(this.graphicsLayer.graphics),this.showResultsGrid()}this.displayFindMessage(t)},createGraphicsLayerAndSymbols:function(){this.graphicsLayer||(this.graphicsLayer=this.createGraphicsLayer()),this.graphicsSymbols||(this.graphicsSymbols=this.createGraphicsSymbols())},createGraphicsLayer:function(){var e=new f({id:this.id+"_findGraphics",title:"Find"});return e.on("click",o.hitch(this,"onGraphicsLayerClick")),this.map.addLayer(e),e},onGraphicsLayerClick:function(e){var t=this.zoomOptions.select;this.zoomOptions.select=!1;var s=this.resultsGrid.row(e.graphic.storeid);this.resultsGrid.select(s),this.resultsGrid.focus(s.element),s.element.focus(),this.zoomOptions.select=t},createGraphicsSymbols:function(){var e,t,s={};return e=o.mixin(this.defaultResultsSymbols,this.resultsSymbols||{}),s.resultsSymbols={},s.resultsSymbols.point=m.fromJson(e.point),s.resultsSymbols.polyline=m.fromJson(e.polyline),s.resultsSymbols.polygon=m.fromJson(e.polygon),t=o.mixin(this.defaultSelectionSymbols,this.selectionSymbols||{}),s.selectionSymbols={},s.selectionSymbols.point=m.fromJson(t.point),s.selectionSymbols.polyline=m.fromJson(t.polyline),s.selectionSymbols.polygon=m.fromJson(t.polygon),s},parseGridColumnProperties:function(){this.queries[this.queryIdx].gridColumns&&n.forEach(this.results,function(o){n.forEach(this.queries[this.queryIdx].gridColumns,function(e){var t,s,i,r;r=this,(i=e).field&&!o.hasOwnProperty(i.field)&&r.feature.attributes.hasOwnProperty(i.field)?this[e.field]=this.feature.attributes[e.field]:(s=this,(t=e).field&&!s.hasOwnProperty(t.field)&&t.get&&(this[e.field]=e.get(this)))},o)},this)},addResultsToGraphicsLayer:function(){var t=0;n.forEach(this.results,function(e){e.id=t,e.feature.storeid=e.id,t++,this.setGraphicSymbol(e.feature,!1),this.graphicsLayer.add(e.feature)},this)},showResultsGrid:function(){var e=this.getQueryInput();this.resultsGrid.store.setData(this.results),this.resultsGrid.refresh();var t="block";1===e.query.layerIds.length&&(t="none"),this.resultsGrid.styleColumn("layerName","display:"+t),e.query&&!0!==e.query.hideGrid&&(this.findResultsGrid.style.display="block")},onResultsGridSelect:function(e){n.forEach(e.rows,o.hitch(this,function(e){var t=e.data.feature;this.setGraphicSymbol(t,!0),t&&t.getDojoShape()&&t.getDojoShape().moveToFront()})),this.graphicsLayer.redraw(),this.zoomOptions.select&&this.zoomToSelectedGraphics()},onResultsGridDeselect:function(e){n.forEach(e.rows,o.hitch(this,function(e){var t=e.data.feature;this.setGraphicSymbol(t,!1)})),this.graphicsLayer.redraw(),this.zoomOptions.deselect&&this.zoomToSelectedGraphics()},onResultsGridRowClick:function(e){var t=this.resultsGrid.row(e),s=t.data.feature;setTimeout(o.hitch(this,function(){this.resultsGrid.selection.hasOwnProperty(t.id)&&this.zoomToGraphics([s])}),100)},setGraphicSymbol:function(e,t){var s=t?this.graphicsSymbols.selectionSymbols[e.geometry.type]:this.graphicsSymbols.resultsSymbols[e.geometry.type];e.setSymbol(s)},zoomToSelectedGraphics:function(){var e=[],t=this.resultsGrid.selection;for(var s in t)t.hasOwnProperty(s)&&e.push(this.resultsGrid.row(s).data.feature);0!==e.length&&this.zoomToGraphics(e)},zoomToGraphics:function(e){var t=null;1<e.length?t=S.graphicsExtent(e):1===e.length&&(t=this.getExtentFromGraphic(e[0])),t&&this.setMapExtent(t)},getExtentFromGraphic:function(e){var t=null;switch(e.geometry.type){case"point":t=this.getExtentFromPoint(e);break;default:t=S.graphicsExtent([e])}return t},getExtentFromPoint:function(e){var t=this.pointExtentSize,s=e.geometry;return new x({xmin:s.x-t,ymin:s.y-t,xmax:s.x+t,ymax:s.y+t,spatialReference:{wkid:this.spatialReference}})},setMapExtent:function(e){this.map.setExtent(e.expand(this.zoomExtentFactor))},clearResults:function(){this.results=null,this.clearResultsGrid(),this.clearFeatures(),this.searchFormDijit.reset(),this.querySelectDijit.setValue(this.queryIdx),r.empty(this.findResultsNode)},clearResultsGrid:function(){this.resultStore&&this.resultsStore.setData([]),this.resultsGrid&&this.resultsGrid.refresh(),this.findResultsNode.style.display="none",this.findResultsGrid.style.display="none"},clearFeatures:function(){this.graphicsLayer&&this.graphicsLayer.clear()},_onQueryChange:function(e){0<=e&&e<this.queries.length&&(this.queryIdx=e,this.updateSearchPrompt())},updateSearchPrompt:function(){var e=this.queries[this.queryIdx].prompt||b.searchText.placeholder;this.searchTextDijit.set("placeholder",e),this.searchTextDijit.set("value",null)},onZoomOptionsSelectChange:function(e){this.zoomOptions.select=e},onZoomOptionsDeselectChange:function(e){this.zoomOptions.deselect=e}})});
-//# sourceMappingURL=Find.js.map
+    'dijit/form/Form',
+    'dijit/form/DropDownButton',
+    'dijit/TooltipDialog',
+    'dijit/form/FilteringSelect',
+    'dijit/form/ValidationTextBox',
+    'dijit/form/CheckBox',
+    'dijit/form/Button',
+    'xstyle/css!./Find/css/Find.css'
+], function (
+    declare, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, domConstruct, lang, array, on, keys, domStyle, Memory,
+    OnDemandGrid, Selection, Keyboard, ColumnResizer, GraphicsLayer, symbolUtils, graphicsUtils, FindTask, FindParameters, Extent,
+    FindTemplate, i18n
+) {
+
+    return declare(
+        [_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
+            widgetsInTemplate: true,
+            templateString: FindTemplate,
+            baseClass: 'gis_AdvancedFindDijit',
+            i18n: i18n,
+            spatialReference: null,
+            showOptionsButton: false,
+            zoomOptions: {
+                select: true,
+                deselect: false
+            },
+            defaultResultsSymbols: {
+                point: {
+                    type: 'esriSMS',
+                    style: 'esriSMSCircle',
+                    size: 25,
+                    color: [0, 255, 255, 32],
+                    angle: 0,
+                    xoffset: 0,
+                    yoffset: 0,
+                    outline: {
+                        type: 'esriSLS',
+                        style: 'esriSLSSolid',
+                        color: [0, 255, 255, 255],
+                        width: 2
+                    }
+                },
+                polyline: {
+                    type: 'esriSLS',
+                    style: 'esriSLSSolid',
+                    color: [0, 255, 255, 255],
+                    width: 3
+                },
+                polygon: {
+                    type: 'esriSFS',
+                    style: 'esriSFSSolid',
+                    color: [0, 255, 255, 32],
+                    outline: {
+                        type: 'esriSLS',
+                        style: 'esriSLSSolid',
+                        color: [0, 255, 255, 255],
+                        width: 3
+                    }
+                }
+            },
+            defaultSelectionSymbols: {
+                point: {
+                    type: 'esriSMS',
+                    style: 'esriSMSCircle',
+                    size: 25,
+                    color: [4, 156, 219, 32],
+                    angle: 0,
+                    xoffset: 0,
+                    yoffset: 0,
+                    outline: {
+                        type: 'esriSLS',
+                        style: 'esriSLSSolid',
+                        color: [4, 156, 219, 255],
+                        width: 2
+                    }
+                },
+                polyline: {
+                    type: 'esriSLS',
+                    style: 'esriSLSSolid',
+                    color: [4, 156, 219, 255],
+                    width: 3
+                },
+                polygon: {
+                    type: 'esriSFS',
+                    style: 'esriSFSSolid',
+                    color: [4, 156, 219, 32],
+                    outline: {
+                        type: 'esriSLS',
+                        style: 'esriSLSSolid',
+                        color: [4, 156, 219, 255],
+                        width: 3
+                    }
+                }
+            },
+            postCreate: function () {
+                this.inherited(arguments);
+                if (this.showOptionsButton) {
+                    domStyle.set(this.optionsDropDownDijit.domNode, 'display', 'inline-block');
+                }
+                this.initializeGlobalVariables();
+                this.addKeyUpHandlerToSearchInput();
+                this.initializeQueries();
+                this.updateSearchPrompt();
+            },
+            initializeGlobalVariables: function () {
+                this.queryIdx = 0;
+                this.currentQueryEventHandlers = [];
+                this.gridColumns = null;
+                if (!this.selectionMode) {
+                    this.selectionMode = 'single';
+                }
+                if (!this.zoomExtentFactor) {
+                    this.zoomExtentFactor = 1.5;
+                }
+                if (!this.spatialReference) {
+                    this.spatialReference = this.map.spatialReference.wkid;
+                }
+                if (!this.pointExtentSize) {
+                    this.pointExtentSize = this.spatialReference === 4326 ? 0.0001 : 25;
+                }
+            },
+            addKeyUpHandlerToSearchInput: function () {
+                this.own(
+                    on(
+                        this.searchTextDijit, 'keyup', lang.hitch(
+                            this, function (evt) {
+                                if (evt.keyCode === keys.ENTER) {
+                                    this.search();
+                                }
+                            }
+                        )
+                    )
+                );
+            },
+            initializeQueries: function () {
+                var k = 0,
+                    queryLen = this.queries.length;
+                for (k = 0; k < queryLen; k++) {
+                    this.queries[k].id = k;
+                }
+                this.querySelectDom.style.display = 'none';
+                if (queryLen > 1) {
+                    var queryStore = new Memory({
+                        data: this.queries
+                    });
+                    this.querySelectDijit.set('store', queryStore);
+                    this.querySelectDijit.set('value', this.queryIdx);
+                    this.querySelectDom.style.display = 'block';
+                }
+            },
+            search: function () {
+                if (this.userInputIsInvalid()) {
+                    this.displayInvalidUserInputMessage();
+                    return;
+                }
+                if (this.queryConfigurationIsInvalid()) {
+                    this.displayInvalidQueryConfigurationMessage();
+                    return;
+                }
+                this.createOrResetResultsGrid();
+                this.displayFindMessage(this.i18n.searching);
+                this.executeFindTask();
+            },
+            executeFindTask: function () {
+                var url = this.getQueryInput().query.url;
+                var findParams = this.getFindParams();
+                var findTask = new FindTask(url);
+                findTask.execute(findParams, lang.hitch(this, this.showResults));
+            },
+            getQueryInput: function () {
+                return {
+                    query: this.queries[this.queryIdx] || {},
+                    searchText: this.searchTextDijit.get('value')
+                };
+            },
+            queryConfigurationIsInvalid: function () {
+                var query = this.getQueryInput().query;
+                if (!query.url || !query.searchFields || !query.layerIds) {
+                    return true;
+                }
+                return false;
+            },
+            userInputIsInvalid: function () {
+                var userInput = this.getQueryInput().searchText;
+                if (userInput.length === 0 || this.userInputLessThanMinLength()) {
+                    return true;
+                }
+                return false;
+            },
+            userInputLessThanMinLength: function () {
+                var queryInput = this.getQueryInput();
+                if (queryInput.query.minChars && (queryInput.searchText.length < queryInput.query.minChars)) {
+                    return true;
+                }
+                return false;
+            },
+            displayInvalidQueryConfigurationMessage: function () {
+                this.displayFindMessage('There is a problem with the query configuration.');
+                return;
+            },
+            displayInvalidUserInputMessage: function () {
+                var minChars = this.getQueryInput().query.minChars;
+                this.displayFindMessage('You must enter at least ' + minChars + ' characters.');
+                return;
+            },
+            displayFindMessage: function (message) {
+                domConstruct.empty(this.findResultsNode);
+                this.findResultsNode.innerHTML = message;
+                this.findResultsNode.style.display = 'block';
+            },
+            getFindParams: function () {
+                var queryInput = this.getQueryInput();
+                var findParams = new FindParameters();
+                findParams.returnGeometry = true;
+                findParams.layerIds = queryInput.query.layerIds;
+                findParams.searchFields = queryInput.query.searchFields;
+                findParams.layerDefinitions = queryInput.query.layerDefs;
+                findParams.searchText = queryInput.searchText;
+                findParams.contains = !this.containsSearchText.checked;
+                findParams.outSpatialReference = {
+                    wkid: this.spatialReference
+                };
+                return findParams;
+            },
+            createOrResetResultsGrid: function () {
+                if (!this.resultsGrid) {
+                    this.createResultsStore();
+                    this.createResultsGrid();
+                    this.attachStandardEventHandlersToResultsGrid();
+                }
+                this.clearResultsGrid();
+                this.clearFeatures();
+                this.resetResultsGridColumns();
+                this.resetResultsGridSort();
+                this.resetGridSelectionMode();
+                this.attachCustomEventHandlersToResultsGrid();
+            },
+            createResultsStore: function () {
+                if (!this.resultsStore) {
+                    this.resultsStore = new Memory({
+                        idProperty: 'id',
+                        data: []
+                    });
+                }
+            },
+            createResultsGrid: function () {
+                var Grid = declare([OnDemandGrid, Keyboard, Selection, ColumnResizer]);
+                this.resultsGrid = new Grid({
+                    selectionMode: this.selectionMode,
+                    cellNavigation: false,
+                    showHeader: true,
+                    store: this.resultsStore
+                }, this.findResultsGrid);
+                this.resultsGrid.startup();
+            },
+            resetResultsGridColumns: function () {
+                if (!this.resultsGrid) {
+                    return;
+                }
+                var columns = this.queries[this.queryIdx].gridColumns || {
+                    layerName: 'Layer',
+                    foundFieldName: 'Field',
+                    value: 'Result'
+                };
+                if (columns instanceof Array) {
+                    columns = array.filter(
+                        columns, function (column) {
+                            if (typeof column.visible === 'undefined') {
+                                column.visible = true;
+                            }
+                            return column.visible;
+                        }
+                    );
+                }
+                this.resultsGrid.setColumns(columns);
+            },
+            resetResultsGridSort: function () {
+                if (!this.resultsGrid) {
+                    return;
+                }
+                var sort = this.queries[this.queryIdx].sort || [
+                    {
+                        attribute: 'value',
+                        descending: false
+                    }
+                ];
+                this.resultsGrid.set('sort', sort);
+            },
+            resetGridSelectionMode: function () {
+                if (!this.resultsGrid) {
+                    return;
+                }
+                var selectionMode = this.queries[this.queryIdx].selectionMode || this.selectionMode;
+                this.resultsGrid.set('selectionMode', selectionMode);
+            },
+            attachStandardEventHandlersToResultsGrid: function () {
+                if (!this.resultsGrid) {
+                    return;
+                }
+                this.own(
+                    this.resultsGrid.on('dgrid-select', lang.hitch(this, 'onResultsGridSelect'))
+                );
+                this.own(
+                    this.resultsGrid.on('dgrid-deselect', lang.hitch(this, 'onResultsGridDeselect'))
+                );
+                this.own(
+                    this.resultsGrid.on('.dgrid-row:dblclick', lang.hitch(this, 'onResultsGridRowClick'))
+                );
+            },
+            attachCustomEventHandlersToResultsGrid: function () {
+                if (!this.resultsGrid) {
+                    return;
+                }
+                array.forEach(this.currentQueryEventHandlers, function (handler) {
+                    handler.handle.remove();
+                });
+                var queryEventHandlers = this.queries[this.queryIdx].customGridEventHandlers || [];
+                array.forEach(queryEventHandlers, lang.hitch(this, function (handler) {
+                    handler.handle = this.resultsGrid.on(handler.event, lang.hitch(this, handler.handler));
+                }));
+                this.currentQueryEventHandlers = queryEventHandlers;
+            },
+            showResults: function (results) {
+                var resultText = this.i18n.noResultsLabel;
+                this.results = results;
+                if (this.results.length > 0) {
+                    var s = (this.results.length === 1) ? '' : this.i18n.resultsLabel.multipleResultsSuffix;
+                    resultText = this.results.length + ' ' + this.i18n.resultsLabel.labelPrefix + s + ' ' + this.i18n.resultsLabel.labelSuffix;
+                    this.createGraphicsLayerAndSymbols();
+                    this.parseGridColumnProperties();
+                    this.addResultsToGraphicsLayer();
+                    this.zoomToGraphics(this.graphicsLayer.graphics);
+                    this.showResultsGrid();
+                }
+                this.displayFindMessage(resultText);
+            },
+            createGraphicsLayerAndSymbols: function () {
+                if (!this.graphicsLayer) {
+                    this.graphicsLayer = this.createGraphicsLayer();
+                }
+                if (!this.graphicsSymbols) {
+                    this.graphicsSymbols = this.createGraphicsSymbols();
+                }
+            },
+            createGraphicsLayer: function () {
+                var graphicsLayer = new GraphicsLayer({
+                    id: this.id + '_findGraphics',
+                    title: 'Find'
+                });
+                graphicsLayer.on('click', lang.hitch(this, 'onGraphicsLayerClick'));
+                this.map.addLayer(graphicsLayer);
+                return graphicsLayer;
+            },
+            onGraphicsLayerClick: function (event) {
+                var zoomOnSelect = this.zoomOptions.select;
+                this.zoomOptions.select = false;
+                var row = this.resultsGrid.row(event.graphic.storeid);
+                this.resultsGrid.select(row);
+                this.resultsGrid.focus(row.element);
+                row.element.focus();
+                this.zoomOptions.select = zoomOnSelect;
+            },
+            createGraphicsSymbols: function () {
+                var graphicSymbols = {}, resultSymbolDefinitions, selectionSymbolDefinitions;
+                resultSymbolDefinitions = lang.mixin(this.defaultResultsSymbols, this.resultsSymbols || {});
+                graphicSymbols.resultsSymbols = {};
+                graphicSymbols.resultsSymbols.point = symbolUtils.fromJson(resultSymbolDefinitions.point);
+                graphicSymbols.resultsSymbols.polyline = symbolUtils.fromJson(resultSymbolDefinitions.polyline);
+                graphicSymbols.resultsSymbols.polygon = symbolUtils.fromJson(resultSymbolDefinitions.polygon);
+                selectionSymbolDefinitions = lang.mixin(
+                    this.defaultSelectionSymbols, this.selectionSymbols || {}
+                );
+                graphicSymbols.selectionSymbols = {};
+                graphicSymbols.selectionSymbols.point = symbolUtils.fromJson(selectionSymbolDefinitions.point);
+                graphicSymbols.selectionSymbols.polyline = symbolUtils.fromJson(selectionSymbolDefinitions.polyline);
+                graphicSymbols.selectionSymbols.polygon = symbolUtils.fromJson(selectionSymbolDefinitions.polygon);
+                return graphicSymbols;
+            },
+            parseGridColumnProperties: function () {
+                if (this.queries[this.queryIdx].gridColumns) {
+                    array.forEach(
+                        this.results, function (result) {
+                            array.forEach(
+                                this.queries[this.queryIdx].gridColumns, function (column) {
+                                    function shouldGetValueFromAttributes (col, res) {
+                                        if (col.field && !result.hasOwnProperty(col.field) && res.feature.attributes.hasOwnProperty(col.field)) {
+                                            return true;
+                                        }
+                                        return false;
+                                    }
+
+                                    function shouldGetValueFromGetFunction (col, res) {
+                                        if (col.field && !res.hasOwnProperty(col.field) && col.get) {
+                                            return true;
+                                        }
+                                        return false;
+                                    }
+
+                                    if (shouldGetValueFromAttributes(column, this)) {
+                                        this[column.field] = this.feature.attributes[column.field];
+                                    } else if (shouldGetValueFromGetFunction (column, this)) {
+                                        this[column.field] = column.get(this);
+                                    }
+                                }, result
+                            );
+                        }, this
+                    );
+                }
+            },
+            addResultsToGraphicsLayer: function () {
+                var unique = 0;
+                array.forEach(
+                    this.results, function (result) {
+                        result.id = unique;
+                        result.feature.storeid = result.id;
+                        unique++;
+                        this.setGraphicSymbol(result.feature, false);
+                        this.graphicsLayer.add(result.feature);
+                    }, this
+                );
+            },
+            showResultsGrid: function () {
+                var queryInput = this.getQueryInput();
+                this.resultsGrid.store.setData(this.results);
+                this.resultsGrid.refresh();
+                var lyrDisplay = 'block';
+                if (queryInput.query.layerIds.length === 1) {
+                    lyrDisplay = 'none';
+                }
+                this.resultsGrid.styleColumn('layerName', 'display:' + lyrDisplay);
+                if (queryInput.query && queryInput.query.hideGrid !== true) {
+                    this.findResultsGrid.style.display = 'block';
+                }
+            },
+            onResultsGridSelect: function (event) {
+                array.forEach(
+                    event.rows, lang.hitch(
+                        this, function (row) {
+                            var feature = row.data.feature;
+                            this.setGraphicSymbol(feature, true);
+                            if (feature && feature.getDojoShape()) {
+                                feature.getDojoShape().moveToFront();
+                            }
+                        }
+                    )
+                );
+                this.graphicsLayer.redraw();
+                if (this.zoomOptions.select) {
+                    this.zoomToSelectedGraphics();
+                }
+            },
+            onResultsGridDeselect: function (event) {
+                array.forEach(
+                    event.rows, lang.hitch(
+                        this, function (row) {
+                            var feature = row.data.feature;
+                            this.setGraphicSymbol(feature, false);
+                        }
+                    )
+                );
+                this.graphicsLayer.redraw();
+                if (this.zoomOptions.deselect) {
+                    this.zoomToSelectedGraphics();
+                }
+            },
+            onResultsGridRowClick: function (event) {
+                var row = this.resultsGrid.row(event);
+                var feature = row.data.feature;
+                setTimeout(lang.hitch(this, function () {
+                    if (this.resultsGrid.selection.hasOwnProperty(row.id)) {
+                        this.zoomToGraphics([feature]);
+                    }
+                }), 100);
+            },
+            setGraphicSymbol: function (graphic, isSelected) {
+                var symbol = isSelected ? this.graphicsSymbols.selectionSymbols[graphic.geometry.type] : this.graphicsSymbols.resultsSymbols[graphic.geometry.type];
+                graphic.setSymbol(symbol);
+            },
+            zoomToSelectedGraphics: function () {
+                var selectedGraphics = [];
+                var selection = this.resultsGrid.selection;
+                for (var id in selection) {
+                    if (selection.hasOwnProperty(id)) {
+                        selectedGraphics.push(this.resultsGrid.row(id).data.feature);
+                    }
+                }
+                if (selectedGraphics.length === 0) {
+                    return;
+                }
+                this.zoomToGraphics(selectedGraphics);
+            },
+            zoomToGraphics: function (graphics) {
+                var zoomExtent = null;
+                if (graphics.length > 1) {
+                    zoomExtent = graphicsUtils.graphicsExtent(graphics);
+                } else if (graphics.length === 1) {
+                    zoomExtent = this.getExtentFromGraphic(graphics[0]);
+                }
+                if (zoomExtent) {
+                    this.setMapExtent(zoomExtent);
+                }
+            },
+            getExtentFromGraphic: function (graphic) {
+                var extent = null;
+                switch (graphic.geometry.type) {
+                case 'point':
+                    extent = this.getExtentFromPoint(graphic);
+                    break;
+                default:
+                    extent = graphicsUtils.graphicsExtent([graphic]);
+                    break;
+                }
+                return extent;
+            },
+            getExtentFromPoint: function (point) {
+                var sz = this.pointExtentSize; // hack
+                var pointGeometry = point.geometry;
+                return new Extent({
+                    'xmin': pointGeometry.x - sz,
+                    'ymin': pointGeometry.y - sz,
+                    'xmax': pointGeometry.x + sz,
+                    'ymax': pointGeometry.y + sz,
+                    'spatialReference': {
+                        wkid: this.spatialReference
+                    }
+                });
+            },
+            setMapExtent: function (extent) {
+                this.map.setExtent(extent.expand(this.zoomExtentFactor));
+            },
+            clearResults: function () {
+                this.results = null;
+                this.clearResultsGrid();
+                this.clearFeatures();
+                this.searchFormDijit.reset();
+                this.querySelectDijit.setValue(this.queryIdx);
+                domConstruct.empty(this.findResultsNode);
+            },
+            clearResultsGrid: function () {
+                if (this.resultStore) {
+                    this.resultsStore.setData([]);
+                }
+                if (this.resultsGrid) {
+                    this.resultsGrid.refresh();
+                }
+                this.findResultsNode.style.display = 'none';
+                this.findResultsGrid.style.display = 'none';
+            },
+            clearFeatures: function () {
+                if (this.graphicsLayer) {
+                    this.graphicsLayer.clear();
+                }
+            },
+            _onQueryChange: function (queryIdx) {
+                if (queryIdx >= 0 && queryIdx < this.queries.length) {
+                    this.queryIdx = queryIdx;
+                    this.updateSearchPrompt();
+                }
+            },
+            updateSearchPrompt: function () {
+                var prompt = this.queries[this.queryIdx].prompt || i18n.searchText.placeholder;
+                this.searchTextDijit.set('placeholder', prompt);
+                this.searchTextDijit.set('value', null);
+            },
+            onZoomOptionsSelectChange: function (value) {
+                this.zoomOptions.select = value;
+            },
+            onZoomOptionsDeselectChange: function (value) {
+                this.zoomOptions.deselect = value;
+            }
+        }
+    );
+});

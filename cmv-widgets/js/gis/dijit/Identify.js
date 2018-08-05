@@ -1,7 +1,809 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dijit/_WidgetsInTemplateMixin',
+    'dijit/MenuItem',
+    'dojo/_base/lang',
+    'dojo/_base/array',
+    'dojo/promise/all',
+    'dojo/topic',
+    'dojo/query',
+    'dojo/dom-style',
+    'dojo/dom-class',
+    'dojo/dnd/Moveable',
+    'dojo/store/Memory',
+    'esri/tasks/IdentifyTask',
+    'esri/tasks/IdentifyParameters',
+    'esri/dijit/PopupTemplate',
+    'esri/layers/FeatureLayer',
+    'esri/TimeExtent',
+    'dojo/Deferred',
+    'dojo/text!./Identify/templates/Identify.html',
+    'dojo/i18n!./Identify/nls/resource',
+    './Identify/Formatters',
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dijit/_WidgetsInTemplateMixin","dijit/MenuItem","dojo/_base/lang","dojo/_base/array","dojo/promise/all","dojo/topic","dojo/query","dojo/dom-style","dojo/dom-class","dojo/dnd/Moveable","dojo/store/Memory","esri/tasks/IdentifyTask","esri/tasks/IdentifyParameters","esri/dijit/PopupTemplate","esri/layers/FeatureLayer","esri/TimeExtent","dojo/Deferred","dojo/text!./Identify/templates/Identify.html","dojo/i18n!./Identify/nls/resource","./Identify/Formatters","dijit/form/Form","dijit/form/FilteringSelect","xstyle/css!./Identify/css/Identify.css"],function(e,i,t,a,r,f,d,o,h,n,s,l,u,c,y,p,m,I,g,v,b,L,T){return e([i,t,a],{widgetsInTemplate:!0,templateString:b,baseClass:"gis_IdentifyDijit",i18n:L,mapClickMode:null,identifies:{},infoTemplates:{},featureLayers:{},ignoreOtherGraphics:!0,createDefaultInfoTemplates:!0,showPopup:!0,draggable:!1,returnFieldName:!1,returnUnformattedValues:!1,layerSeparator:"||",allLayersId:"***",excludedFields:["objectid","esri_oid","shape","shape.len","shape_length","shape_len","shape.stlength()","shape.area","shape_area","shape.starea()"],defaultFormatters:{esriFieldTypeSmallInteger:T.formatInt,esriFieldTypeInteger:T.formatInt,esriFieldTypeSingle:T.formatFloat,esriFieldTypeDouble:T.formatFloat,esriFieldTypeDate:T.formatDate},postCreate:function(){this.inherited(arguments),this.identifies||(this.identifies={}),this.layers=[],this.addLayerInfos(this.layerInfos),this.own(h.subscribe("mapClickMode/currentSet",f.hitch(this,"setMapClickMode"))),this.own(h.subscribe("identify/addLayerInfos",f.hitch(this,"addLayerInfos"))),this.own(h.subscribe("identify/removeLayerInfos",f.hitch(this,"removeLayerInfos"))),this.map.on("click",f.hitch(this,function(e){"identify"===this.mapClickMode&&this.executeIdentifyTask(e)})),this.mapRightClickMenu&&this.addRightClickMenu(),this.parentWidget&&(this.createIdentifyLayerList(),this.map.on("update-end",f.hitch(this,function(){this.createIdentifyLayerList()}))),this.draggable&&this.setupDraggable()},addLayerInfos:function(e){d.forEach(e,f.hitch(this,"addLayerInfo"))},addLayerInfo:function(t){var e=t.layer.id,a=this.map.getLayer(e),i=null;if(a){var r=a.url;if("esri.layers.FeatureLayer"===a.declaredClass){if(a.capabilities&&d.indexOf(a.capabilities.toLowerCase(),"data")<0&&!a.infoTemplate&&(i=this.getInfoTemplate(a,a.layerId))){a.setInfoTemplate(i);var n=i.info.fieldInfos;0<d.filter(n,function(e){return e.formatter}).length&&a.on("graphic-draw",f.hitch(this,"getFormattedFeature",a.infoTemplate))}if(r){var s=r.lastIndexOf("/"+a.layerId);0<s&&(r=r.substring(0,s))}}else a.layerInfos&&d.forEach(a.layerInfos,f.hitch(this,function(e){var i=e.id;(null===t.layerIds||0<=d.indexOf(t.layerIds,i))&&this.getFeatureLayerForDynamicSublayer(a,i)}));var l=[];if(this.parentWidget){var o=a.on("visibility-change",f.hitch(this,function(e){!1===e.visible&&this.createIdentifyLayerList()}));l.push(o)}this.layers.push({ref:a,layerInfo:t,identifyTask:r?new y(r):null,listeners:l})}},removeLayerInfos:function(e){d.forEach(e,f.hitch(this,"removeLayerInfo"))},removeLayerInfo:function(e){var i=e.id,t=[],a=null;d.forEach(this.layers,function(e){e.ref.id!==i?t.push(e):a=e.listeners}),t.length!==this.layers.length&&(this.layers=t),a&&d.forEach(a,function(e){e.remove&&e.remove()})},addRightClickMenu:function(){this.map.on("MouseDown",f.hitch(this,function(e){this.mapRightClick=e})),this.mapRightClickMenu.addChild(new r({label:this.i18n.rightClickMenuItem.label,onClick:f.hitch(this,"handleRightClick")}))},setupDraggable:function(){var e,i,t,a=null;e=n("div.esriPopup"),i=n("div.esriPopup div.titlePane div.title"),t=n("div.esriPopup div.outerPointer, div.esriPopup div.pointer"),0<e.length&&0<i.length&&(s.set(i[0],"cursor","move"),a=new u(e[0],{handle:i[0]}),0<t.length&&(a.onMoveStart=function(){d.forEach(t,function(e){l.remove(e,"left right top bottom topLeft topRight bottomLeft bottomRight")})}))},executeIdentifyTask:function(i){var e=i.mapPoint,a=this.createIdentifyParams(e),r=[],n=[],s=this.getSelectedLayer();if(!this.checkForGraphicInfoTemplate(i)){var t=d.filter(this.layers,function(e){return e.ref.id===i.graphic._layer.id})[0];if(!t)return h.publish("identify/results",{features:[{feature:i.graphic}]}),void(this.showPopup||this.map.infoWindow.hide());n.push(t);var l=new v;r.push(l.promise),l.resolve([{feature:i.graphic}])}this.map.infoWindow.hide(),this.map.infoWindow.clearFeatures(),i.shiftKey||i.ctrlKey||i.altKey||(d.forEach(this.layers,f.hitch(this,function(e){var i=this.getLayerIds(e,s);if(0<i.length){var t=f.clone(a);t.layerDefinitions=e.ref.layerDefinitions,t.layerIds=i,t.returnFieldName=void 0!==e.layerInfo.returnFieldName?e.layerInfo.returnFieldName:this.returnFieldName,t.returnUnformattedValues=void 0!==e.layerInfo.returnUnformattedValues?e.layerInfo.returnUnformattedValues:this.returnUnformattedValues,e.ref.timeInfo&&e.ref.timeInfo.timeExtent&&this.map.timeExtent&&(t.timeExtent=new g(this.map.timeExtent.startTime,this.map.timeExtent.endTime)),r.push(e.identifyTask.execute(t)),n.push(e)}})),h.publish("identify/execute",{event:i,identifies:r,identifiedlayers:n}),0<r.length&&(this.showPopup&&(this.map.infoWindow.setTitle(this.i18n.mapInfoWindow.identifyingTitle),this.map.infoWindow.setContent('<div class="loading"></div>'),this.map.infoWindow.show(e)),o(r).then(f.hitch(this,"identifyCallback",n),f.hitch(this,"identifyError"))))},checkForGraphicInfoTemplate:function(e){if(e.graphic){var i=e.graphic._layer;if(i.infoTemplate||i.capabilities&&d.indexOf(i.capabilities.toLowerCase(),"data")<0)return!1;if(!this.ignoreOtherGraphics){if(!this.identifies.hasOwnProperty(i.id))return!1;if(isNaN(i.layerId)||!this.identifies[i.id].hasOwnProperty(i.layerId))return!1}}return!0},createIdentifyParams:function(e){var i=new p;return i.tolerance=this.identifyTolerance,i.returnGeometry=!0,i.layerOption=p.LAYER_OPTION_VISIBLE,i.geometry=e,i.mapExtent=this.map.extent,i.width=this.map.width,i.height=this.map.height,i.spatialReference=this.map.spatialReference,i},getSelectedLayer:function(){var e=this.allLayersId;if(this.parentWidget){var i=this.identifyFormDijit.get("value");i.identifyLayer&&""!==i.identifyLayer?e=i.identifyLayer:this.identifyLayerDijit.set("value",e)}return e},getLayerIds:function(e,i){var t=i.split(this.layerSeparator),a=this.allLayersId,r=e.ref,n=e.layerInfo.layerIds,s=[];return r.visible&&(t[0]!==a&&r.id!==t[0]||(1<t.length&&t[1]?s=[t[1]]:"esri.layers.FeatureLayer"!==r.declaredClass||isNaN(r.layerId)?r.layerInfos&&(s=this.getLayerInfos(e,n)):r.capabilities&&0<=d.indexOf(r.capabilities.toLowerCase(),"data")&&(s=[r.layerId]))),s},getLayerInfos:function(i,t){var a=[],e=i.ref;return d.forEach(e.layerInfos,f.hitch(this,function(e){this.includeSubLayer(e,i,t)&&a.push(e.id)})),a},identifyCallback:function(t,e){var n=[];d.forEach(e,function(e,i){var r=t[i].ref;d.forEach(e,function(e){e.feature.geometry.spatialReference=this.map.spatialReference;var i=e.feature;if(void 0===i.infoTemplate){var t=this.getInfoTemplate(r,null,e);if(!t)return;e.layerId&&r.layerInfos&&t.info.showAttachments&&(e.feature._layer=this.getFeatureLayerForDynamicSublayer(r,e.layerId));var a=this.buildExpressionInfos(f.clone(t),i);i.setInfoTemplate(a)}i&&i.infoTemplate&&i.infoTemplate.info&&(i=this.getFormattedFeature(i)),n.push(i)},this)},this),this.map.infoWindow.setFeatures(n),h.publish("identify/results",{features:n,responseArray:e,identifiedlayers:t})},getFormattedFeature:function(i){var e=i.infoTemplate;return i.graphic&&(i=i.graphic),d.forEach(e.info.fieldInfos,function(e){"function"==typeof e.formatter&&(i.attributes[e.fieldName]=e.formatter(i.attributes[e.fieldName],i.attributes,f.clone(i.geometry)))}),i},buildExpressionInfos:function(e,a){if(a.graphic&&(a=a.graphic),a&&e&&e.info&&"function"==typeof e.getExpressionInfo){var i=e.info,r=i.expressionInfos||[];d.forEach(i.fieldInfos,function(e){if("function"==typeof e.formatter&&!1!==e.useExpression){var i=e.fieldName.toLowerCase()+"-formatted",t="return '"+e.formatter(a.attributes[e.fieldName],a.attributes,f.clone(a.geometry))+"'";e.fieldName="expression/"+i,(r=d.filter(r,function(e){return e.name!==i})).push({name:i,title:e.label||" ",expression:t}),e.formatter=null}}),i.expressionInfos=r,e=new m(i)}return e},identifyError:function(e){this.map.infoWindow.hide(),h.publish("viewer/handleError",{source:"Identify",error:e}),h.publish("identify/error",{error:e})},handleRightClick:function(){this.executeIdentifyTask(this.mapRightClick)},getInfoTemplate:function(e,i,t){var a,r=null;t?i="number"==typeof t.layerId?t.layerId:e.layerId:null===i&&(i=e.layerId);var n=this.identifies;if(n.hasOwnProperty(e.id)){if(n[e.id].hasOwnProperty(i)&&(r=n[e.id][i])instanceof m)return r}else n[e.id]={};return a=f.mixin(this.createDefaultInfoTemplate(e,i,t),n[e.id][i]||{}),r=n[e.id][i]=new m(a),a.content&&r.setContent(a.content),n[e.id][i]},createDefaultInfoTemplate:function(e,i,t){var a=null,r=[],n=this.getLayerName(e);if(t&&(n=t.layerName),t&&t.feature){var s=t.feature.attributes;if(s)for(var l in s)s.hasOwnProperty(l)&&this.addDefaultFieldInfo(r,{fieldName:l,label:this.makeSentenceCase(l),visible:!0})}else if(e._outFields&&e._outFields.length&&"*"!==e._outFields[0]){var o=e.fields;d.forEach(e._outFields,f.hitch(this,function(i){var e=d.filter(o,function(e){return e.name===i});0<e.length&&this.addDefaultFieldInfo(r,{fieldName:e[0].name,label:e[0].alias,visible:!0})}))}else e.fields&&d.forEach(e.fields,f.hitch(this,function(e){this.addDefaultFieldInfo(r,{fieldName:e.name,label:e.alias===e.name?this.makeSentenceCase(e.name):e.alias,visible:!0})}));return 0<r.length&&(a={title:n,fieldInfos:r,showAttachments:e.hasAttachments}),a},makeSentenceCase:function(e){if(!e.length)return"";e=e.toLowerCase().replace(/_/g," ").split(" ");for(var i=0;i<e.length;i++)e[i]=e[i].charAt(0).toUpperCase()+(e[i].substr(1).length?e[i].substr(1):"");return e.length?e.join(" "):e},addDefaultFieldInfo:function(e,i){var t=i.fieldName.toLowerCase();d.indexOf(this.excludedFields,t)<0&&e.push(i)},createIdentifyLayerList:function(){var n=null,s=[],l=this.identifyLayerDijit.get("value"),o=this.layerSeparator;d.forEach(this.layers,f.hitch(this,function(i){var t=i.ref,a=i.layerInfo.layerIds;if(t.visible){var r=this.getLayerName(i);"esri.layers.FeatureLayer"!==t.declaredClass||isNaN(t.layerId)?d.forEach(t.layerInfos,f.hitch(this,function(e){this.includeSubLayer(e,i,a)&&(s.push({name:r+" \\ "+e.name,id:t.id+o+e.id}),t.id+o+e.id===l&&(n=l))})):(s.push({name:r,id:t.id+o+t.layerId}),t.id+o+t.layerId===l&&(n=l))}})),s.sort(function(e,i){return e.name>i.name?1:i.name>e.name?-1:0}),this.identifyLayerDijit.set("disabled",s.length<1),0<s.length&&(s.unshift({name:this.i18n.labels.allVisibleLayers,id:"***"}),n||(n=s[0].id));var e=new c({data:s});this.identifyLayerDijit.set("store",e),this.identifyLayerDijit.set("value",n)},includeSubLayer:function(e,i,t){if(null!==e.subLayerIds)return!1;var a=i.ref;if(this.isDefaultLayerVisibility(a)&&!this.checkVisibilityRecursive(i,e.id))return!1;if(d.indexOf(a.visibleLayers,e.id)<0)return!1;if(!this.layerVisibleAtCurrentScale(e))return!1;if(t&&d.indexOf(t,e.id)<0)return!1;if(!this.createDefaultInfoTemplates&&!this.getInfoTemplate(a,e.id))return!1;return!0},checkVisibilityRecursive:function(e,i){var t=e.ref,a=d.filter(t.layerInfos,function(e){return e.id===i});if(0<a.length){var r=a[0];if(-1!==t.visibleLayers.indexOf(i)&&(e.layerInfo.ignoreDynamicGroupVisibility||-1===r.parentLayerId||this.checkVisibilityRecursive(e,r.parentLayerId)))return!0}return!1},isDefaultLayerVisibility:function(e){for(var i=0;i<e.layerInfos.length;i++){var t=e.layerInfos[i];if(t.defaultVisibility&&-1===e.visibleLayers.indexOf(t.id))return!1}return!0},getLayerName:function(i){var t=null;return i.layerInfo&&(t=i.layerInfo.title),t||d.forEach(this.layers,function(e){e.ref.id!==i.id||(t=e.layerInfo.title)}),t||!(t=i.name)&&i.ref&&(t=i.ref._titleForLegend),t},getFeatureLayerForDynamicSublayer:function(e,i){if(!e.layerInfos)return!1;var t=e.url+"/"+i;return this.featureLayers.hasOwnProperty(t)||(this.featureLayers[t]=new I(t)),this.featureLayers[t]},layerVisibleAtCurrentScale:function(e){var i=this.map.getScale();return!(0!==e.maxScale&&i<e.maxScale||0!==e.minScale&&i>e.minScale)},setMapClickMode:function(t){this.mapClickMode=t;var a=this.map;d.forEach(a.graphicsLayerIds,function(e){var i=a.getLayer(e);i&&("identify"===t?this.infoTemplates[i.id]&&(i.infoTemplate=f.clone(this.infoTemplates[i.id])):i.infoTemplate&&(this.infoTemplates[i.id]=f.clone(i.infoTemplate),i.infoTemplate=null))},this)}})});
-//# sourceMappingURL=Identify.js.map
+    'dijit/form/Form',
+    'dijit/form/FilteringSelect',
+    'xstyle/css!./Identify/css/Identify.css'
+], function (declare, _WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin, MenuItem, lang, array, all, topic, query, domStyle, domClass, Moveable, Memory, IdentifyTask, IdentifyParameters, PopupTemplate, FeatureLayer, TimeExtent, Deferred, IdentifyTemplate, i18n, Formatters) {
+
+    return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
+        widgetsInTemplate: true,
+        templateString: IdentifyTemplate,
+        baseClass: 'gis_IdentifyDijit',
+        i18n: i18n,
+
+        mapClickMode: null,
+        identifies: {},
+        infoTemplates: {},
+        featureLayers: {},
+        ignoreOtherGraphics: true,
+        createDefaultInfoTemplates: true,
+        showPopup: true,
+        draggable: false,
+        returnFieldName: false,
+        returnUnformattedValues: false,
+        layerSeparator: '||',
+        allLayersId: '***',
+        excludedFields: [
+            'objectid', 'esri_oid', 'shape',
+            'shape.len', 'shape_length',
+            'shape_len', 'shape.stlength()',
+            'shape.area', 'shape_area', 'shape.starea()'
+        ],
+        /**
+         * field type mappings to their default formatter functions
+         * overriding this object will globally replace the default
+         * formatter function for the field type
+         * @type {Object<Function>}
+         */
+        defaultFormatters: {
+            'esriFieldTypeSmallInteger': Formatters.formatInt,
+            'esriFieldTypeInteger': Formatters.formatInt,
+            'esriFieldTypeSingle': Formatters.formatFloat,
+            'esriFieldTypeDouble': Formatters.formatFloat,
+            'esriFieldTypeDate': Formatters.formatDate
+        },
+
+        postCreate: function () {
+            this.inherited(arguments);
+            if (!this.identifies) {
+                this.identifies = {};
+            }
+            this.layers = [];
+            this.addLayerInfos(this.layerInfos);
+
+            this.own(topic.subscribe('mapClickMode/currentSet', lang.hitch(this, 'setMapClickMode')));
+            this.own(topic.subscribe('identify/addLayerInfos', lang.hitch(this, 'addLayerInfos')));
+            this.own(topic.subscribe('identify/removeLayerInfos', lang.hitch(this, 'removeLayerInfos')));
+
+            this.map.on('click', lang.hitch(this, function (evt) {
+                if (this.mapClickMode === 'identify') {
+                    this.executeIdentifyTask(evt);
+                }
+            }));
+            if (this.mapRightClickMenu) {
+                this.addRightClickMenu();
+            }
+
+            // rebuild the layer selection list when the map is updated
+            // but only if we have a UI
+            if (this.parentWidget) {
+                this.createIdentifyLayerList();
+                this.map.on('update-end', lang.hitch(this, function () {
+                    this.createIdentifyLayerList();
+                }));
+            }
+
+            if (this.draggable) {
+                this.setupDraggable();
+            }
+        },
+        /**
+         * handles an array of layerInfos to call addLayerInfo for each layerInfo
+         * @param {Array<layerInfo>} layerInfos The array of layer infos
+         * @returns {undefined}
+         */
+        addLayerInfos: function (layerInfos) {
+            array.forEach(layerInfos, lang.hitch(this, 'addLayerInfo'));
+        },
+        /**
+         * Initializes an infoTemplate on a layerInfo.layer object if it doesn't
+         * exist already.
+         * @param {object} layerInfo A cmv layerInfo object that contains a layer property
+         * @return {undefined}
+         */
+        addLayerInfo: function (layerInfo) {
+            var lyrId = layerInfo.layer.id, layer = this.map.getLayer(lyrId),
+                infoTemplate = null;
+            if (layer) {
+                var url = layer.url;
+
+                // handle feature layers
+                if (layer.declaredClass === 'esri.layers.FeatureLayer') {
+
+                    // If is a feature layer that does not support
+                    // Identify (Feature Service), create an
+                    // infoTemplate for the graphic features. Create
+                    // it only if one does not already exist.
+                    if (layer.capabilities && array.indexOf(layer.capabilities.toLowerCase(), 'data') < 0) {
+                        if (!layer.infoTemplate) {
+                            infoTemplate = this.getInfoTemplate(layer, layer.layerId);
+                            if (infoTemplate) {
+                                layer.setInfoTemplate(infoTemplate);
+                                var fieldInfos = infoTemplate.info.fieldInfos;
+                                var formatters = array.filter(fieldInfos, function (info) {
+                                    return (info.formatter);
+                                });
+                                if (formatters.length > 0) {
+                                    layer.on('graphic-draw', lang.hitch(this, 'getFormattedFeature', layer.infoTemplate));
+                                }
+                            }
+                        }
+                    }
+
+                    // If it is a feature Layer, we get the base url
+                    // for the map service by removing the layerId.
+                    if (url) {
+                        var lastSL = url.lastIndexOf('/' + layer.layerId);
+                        if (lastSL > 0) {
+                            url = url.substring(0, lastSL);
+                        }
+                    }
+                } else if (layer.layerInfos) {
+                    array.forEach(layer.layerInfos, lang.hitch(this, function (subLayerInfo) {
+                        var subLayerId = subLayerInfo.id;
+                        if ((layerInfo.layerIds === null) || (array.indexOf(layerInfo.layerIds, subLayerId) >= 0)) {
+                            this.getFeatureLayerForDynamicSublayer(layer, subLayerId);
+                        }
+                    }));
+                }
+
+                // rebuild the layer selection list when any layer is hidden
+                // but only if we have a UI
+                var listeners = [];
+                if (this.parentWidget) {
+                    var listener = layer.on('visibility-change', lang.hitch(this, function (evt) {
+                        if (evt.visible === false) {
+                            this.createIdentifyLayerList();
+                        }
+                    }));
+                    listeners.push(listener);
+                }
+
+                this.layers.push({
+                    ref: layer,
+                    layerInfo: layerInfo,
+                    identifyTask: (url) ? new IdentifyTask(url) : null,
+                    listeners: listeners
+                });
+            }
+        },
+        /**
+         * handles an array of layerInfos to call removeLayerInfo for each layerInfo
+         * @param {Array<layerInfo>} layerInfos The array of layer infos
+         * @returns {undefined}
+         */
+        removeLayerInfos: function (layerInfos) {
+            array.forEach(layerInfos, lang.hitch(this, 'removeLayerInfo'));
+        },
+        removeLayerInfo: function (layerInfo) {
+            var lyrId = layerInfo.id;
+            var layers = [], listeners = null;
+            array.forEach(this.layers, function (layer) {
+                if (layer.ref.id !== lyrId) {
+                    layers.push(layer);
+                } else {
+                    listeners = layer.listeners;
+                }
+            });
+
+            if (layers.length !== this.layers.length) {
+                this.layers = layers;
+            }
+            // remove any listeners
+            if (listeners) {
+                array.forEach(listeners, function (listener) {
+                    if (listener.remove) {
+                        listener.remove();
+                    }
+                });
+            }
+        },
+        addRightClickMenu: function () {
+            this.map.on('MouseDown', lang.hitch(this, function (evt) {
+                this.mapRightClick = evt;
+            }));
+            this.mapRightClickMenu.addChild(new MenuItem({
+                label: this.i18n.rightClickMenuItem.label,
+                onClick: lang.hitch(this, 'handleRightClick')
+            }));
+        },
+        setupDraggable: function () {
+            var popups = null,
+                handles = null,
+                pointers = null,
+                movable = null;
+            // the popup, handle (title) and pointers (arrows)
+            popups = query('div.esriPopup');
+            handles = query('div.esriPopup div.titlePane div.title');
+            pointers = query('div.esriPopup div.outerPointer, div.esriPopup div.pointer');
+
+            if (popups.length > 0 && handles.length > 0) {
+                domStyle.set(handles[0], 'cursor', 'move');
+                movable = new Moveable(popups[0], {
+                    handle: handles[0]
+                });
+
+                if (pointers.length > 0) {
+                    // hide the pointer arrow when you move the popup
+                    movable.onMoveStart = function () {
+                        array.forEach(pointers, function (pointer) {
+                            domClass.remove(pointer, 'left right top bottom topLeft topRight bottomLeft bottomRight');
+                        });
+                    };
+                }
+            }
+        },
+        executeIdentifyTask: function (evt) {
+            var mapPoint = evt.mapPoint;
+            var identifyParams = this.createIdentifyParams(mapPoint);
+            var identifies = [];
+            var identifiedlayers = [];
+            var selectedLayer = this.getSelectedLayer();
+
+            if (!this.checkForGraphicInfoTemplate(evt)) {
+                // return;
+                var layer = array.filter(this.layers, function (l) {
+                    return l.ref.id === evt.graphic._layer.id;
+                })[0];
+                if (!layer) {
+                    topic.publish('identify/results', {
+                        features: [{feature: evt.graphic}]
+                    });
+                    if (!this.showPopup) {
+                        this.map.infoWindow.hide();
+                    }
+                    return;
+                }
+                identifiedlayers.push(layer);
+                var d = new Deferred();
+                identifies.push(d.promise);
+                d.resolve([{feature: evt.graphic}]);
+            }
+
+            this.map.infoWindow.hide();
+            this.map.infoWindow.clearFeatures();
+
+            // don't identify on shift-click, ctrl-click or alt-click
+            if (evt.shiftKey || evt.ctrlKey || evt.altKey) {
+                return;
+            }
+
+            array.forEach(this.layers, lang.hitch(this, function (lyr) {
+                var layerIds = this.getLayerIds(lyr, selectedLayer);
+                if (layerIds.length > 0) {
+                    var params = lang.clone(identifyParams);
+                    params.layerDefinitions = lyr.ref.layerDefinitions;
+                    params.layerIds = layerIds;
+                    params.returnFieldName = (typeof lyr.layerInfo.returnFieldName !== 'undefined') ? lyr.layerInfo.returnFieldName : this.returnFieldName;
+                    params.returnUnformattedValues = (typeof lyr.layerInfo.returnUnformattedValues !== 'undefined') ? lyr.layerInfo.returnUnformattedValues : this.returnUnformattedValues;
+                    if (lyr.ref.timeInfo && lyr.ref.timeInfo.timeExtent && this.map.timeExtent) {
+                        params.timeExtent = new TimeExtent(this.map.timeExtent.startTime, this.map.timeExtent.endTime);
+                    }
+                    identifies.push(lyr.identifyTask.execute(params));
+                    identifiedlayers.push(lyr);
+                }
+            }));
+
+            topic.publish('identify/execute', {
+                event: evt,
+                identifies: identifies,
+                identifiedlayers: identifiedlayers
+            });
+
+            if (identifies.length > 0) {
+                if (this.showPopup) {
+                    this.map.infoWindow.setTitle(this.i18n.mapInfoWindow.identifyingTitle);
+                    this.map.infoWindow.setContent('<div class="loading"></div>');
+                    this.map.infoWindow.show(mapPoint);
+                }
+                all(identifies).then(lang.hitch(this, 'identifyCallback', identifiedlayers), lang.hitch(this, 'identifyError'));
+            }
+        },
+
+        checkForGraphicInfoTemplate: function (evt) {
+            if (evt.graphic) {
+                // handle feature layers that come from a feature service
+                // and may already have an info template
+                var layer = evt.graphic._layer;
+                if (layer.infoTemplate || (layer.capabilities && array.indexOf(layer.capabilities.toLowerCase(), 'data') < 0)) {
+                    return false;
+                }
+
+                if (!this.ignoreOtherGraphics) {
+                    // handles graphic from another type of graphics layer
+                    // added to the map and so the identify is not found
+                    if (!this.identifies.hasOwnProperty(layer.id)) {
+                        return false;
+                    }
+                    // no layerId (graphics) or sublayer not defined
+                    if (isNaN(layer.layerId) || !this.identifies[layer.id].hasOwnProperty(layer.layerId)) {
+                        return false;
+                    }
+                }
+
+            }
+
+            return true;
+        },
+
+        createIdentifyParams: function (point) {
+            var identifyParams = new IdentifyParameters();
+            identifyParams.tolerance = this.identifyTolerance;
+            identifyParams.returnGeometry = true;
+            identifyParams.layerOption = IdentifyParameters.LAYER_OPTION_VISIBLE;
+            identifyParams.geometry = point;
+            identifyParams.mapExtent = this.map.extent;
+            identifyParams.width = this.map.width;
+            identifyParams.height = this.map.height;
+            identifyParams.spatialReference = this.map.spatialReference;
+
+            return identifyParams;
+        },
+
+        getSelectedLayer: function () {
+            var selectedLayer = this.allLayersId; // default is all layers
+            // if we have a UI, then get the selected layer
+            if (this.parentWidget) {
+                var form = this.identifyFormDijit.get('value');
+                if (!form.identifyLayer || form.identifyLayer === '') {
+                    this.identifyLayerDijit.set('value', selectedLayer);
+                } else {
+                    selectedLayer = form.identifyLayer;
+                }
+            }
+            return selectedLayer;
+        },
+
+        getLayerIds: function (layer, selectedLayer) {
+            var arrIds = selectedLayer.split(this.layerSeparator);
+            var allLayersId = this.allLayersId;
+            var ref = layer.ref,
+                selectedIds = layer.layerInfo.layerIds;
+            var layerIds = [];
+            if (ref.visible) {
+                if (arrIds[0] === allLayersId || ref.id === arrIds[0]) {
+                    if (arrIds.length > 1 && arrIds[1]) { // layer explicity requested
+                        layerIds = [arrIds[1]];
+                    } else if ((ref.declaredClass === 'esri.layers.FeatureLayer') && !isNaN(ref.layerId)) { // feature layer
+                        // do not allow feature layer that does not support
+                        // Identify (Feature Service)
+                        if (ref.capabilities && array.indexOf(ref.capabilities.toLowerCase(), 'data') >= 0) {
+                            layerIds = [ref.layerId];
+                        }
+                    } else if (ref.layerInfos) {
+                        layerIds = this.getLayerInfos(layer, selectedIds);
+                    }
+                }
+            }
+            return layerIds;
+        },
+
+        getLayerInfos: function (layer, selectedIds) {
+            var layerIds = [],
+                ref = layer.ref;
+            array.forEach(ref.layerInfos, lang.hitch(this, function (layerInfo) {
+                if (!this.includeSubLayer(layerInfo, layer, selectedIds)) {
+                    return;
+                }
+                layerIds.push(layerInfo.id);
+            }));
+            return layerIds;
+
+        },
+
+        identifyCallback: function (identifiedlayers, responseArray) {
+            var fSet = [];
+            array.forEach(responseArray, function (response, i) {
+                var ref = identifiedlayers[i].ref;
+                array.forEach(response, function (result) {
+                    result.feature.geometry.spatialReference = this.map.spatialReference; //temp workaround for ags identify bug. remove when fixed.
+                    var feature = result.feature;
+                    if (typeof feature.infoTemplate === 'undefined') {
+                        var infoTemplate = this.getInfoTemplate(ref, null, result);
+                        if (infoTemplate) {
+                            if (result.layerId && ref.layerInfos && infoTemplate.info.showAttachments) {
+                                result.feature._layer = this.getFeatureLayerForDynamicSublayer(ref, result.layerId);
+                            }
+                            var featureInfoTemplate = this.buildExpressionInfos(lang.clone(infoTemplate), feature);
+                            feature.setInfoTemplate(featureInfoTemplate);
+                        } else {
+                            return;
+                        }
+                    }
+                    if (feature && feature.infoTemplate && feature.infoTemplate.info) {
+                        feature = this.getFormattedFeature(feature);
+                    }
+                    fSet.push(feature);
+                }, this);
+            }, this);
+            this.map.infoWindow.setFeatures(fSet);
+            topic.publish('identify/results', {
+                features: fSet,
+                responseArray: responseArray,
+                identifiedlayers: identifiedlayers
+            });
+        },
+        getFormattedFeature: function (feature) {
+            var infoTemplate = feature.infoTemplate;
+            if (feature.graphic) {
+                feature = feature.graphic;
+            }
+            array.forEach(infoTemplate.info.fieldInfos, function (info) {
+                if (typeof info.formatter === 'function') {
+                    feature.attributes[info.fieldName] = info.formatter(feature.attributes[info.fieldName], feature.attributes, lang.clone(feature.geometry));
+                }
+            });
+            return feature;
+        },
+        buildExpressionInfos: function (infoTemplate, feature) {
+            if (feature.graphic) {
+                feature = feature.graphic;
+            }
+            if (feature && infoTemplate && infoTemplate.info && (typeof infoTemplate.getExpressionInfo === 'function')) {
+                var info = infoTemplate.info;
+                var expressionInfos = info.expressionInfos || [];
+                array.forEach(info.fieldInfos, function (fieldInfo) {
+                    if (typeof fieldInfo.formatter === 'function' && fieldInfo.useExpression !== false) {
+                        var name = fieldInfo.fieldName.toLowerCase() + '-formatted';
+                        var expression = 'return \'' + fieldInfo.formatter(feature.attributes[fieldInfo.fieldName], feature.attributes, lang.clone(feature.geometry)) + '\'';
+                        fieldInfo.fieldName = 'expression/' + name;
+                        expressionInfos = array.filter(expressionInfos, function (expressionInfo) {
+                            return (expressionInfo.name !== name);
+                        });
+                        expressionInfos.push({
+                            name: name,
+                            title: fieldInfo.label || ' ',
+                            expression: expression
+                        });
+                        fieldInfo.formatter = null;
+                    }
+                });
+                info.expressionInfos = expressionInfos;
+                infoTemplate = new PopupTemplate(info);
+            }
+            return infoTemplate;
+        },
+        identifyError: function (err) {
+            this.map.infoWindow.hide();
+            topic.publish('viewer/handleError', {
+                source: 'Identify',
+                error: err
+            });
+            topic.publish('identify/error', {
+                error: err
+            });
+        },
+        handleRightClick: function () {
+            this.executeIdentifyTask(this.mapRightClick);
+        },
+
+        getInfoTemplate: function (layer, layerId, result) {
+            var popup = null,
+                config = null;
+            if (result) {
+                layerId = typeof result.layerId === 'number' ? result.layerId : layer.layerId;
+            } else if (layerId === null) {
+                layerId = layer.layerId;
+            }
+
+            var ids = this.identifies;
+            if (ids.hasOwnProperty(layer.id)) {
+                if (ids[layer.id].hasOwnProperty(layerId)) {
+                    popup = ids[layer.id][layerId];
+                    if (popup instanceof PopupTemplate) {
+                        return popup;
+                    }
+                }
+            } else {
+                ids[layer.id] = {};
+            }
+
+            // by mixin in the users config with the default props we can
+            // generate a config object that provides the basics automatically
+            // while letting the user override only the parts they want...like mediaInfos
+            config = lang.mixin(this.createDefaultInfoTemplate(layer, layerId, result), ids[layer.id][layerId] || {});
+
+            popup = ids[layer.id][layerId] = new PopupTemplate(config);
+            if (config.content) {
+                popup.setContent(config.content);
+            }
+
+            return ids[layer.id][layerId];
+        },
+
+        createDefaultInfoTemplate: function (layer, layerId, result) {
+            var popup = null,
+                fieldInfos = [];
+
+            var layerName = this.getLayerName(layer);
+            if (result) {
+                layerName = result.layerName;
+            }
+
+            // from the results
+            if (result && result.feature) {
+                var attributes = result.feature.attributes;
+                if (attributes) {
+                    for (var prop in attributes) {
+                        if (attributes.hasOwnProperty(prop)) {
+                            this.addDefaultFieldInfo(fieldInfos, {
+                                fieldName: prop,
+                                label: this.makeSentenceCase(prop),
+                                visible: true
+                            });
+                        }
+                    }
+                }
+
+                // from the outFields of the layer
+            } else if (layer._outFields && (layer._outFields.length) && (layer._outFields[0] !== '*')) {
+
+                var fields = layer.fields;
+                array.forEach(layer._outFields, lang.hitch(this, function (fieldName) {
+                    var foundField = array.filter(fields, function (field) {
+                        return (field.name === fieldName);
+                    });
+                    if (foundField.length > 0) {
+                        this.addDefaultFieldInfo(fieldInfos, {
+                            fieldName: foundField[0].name,
+                            label: foundField[0].alias,
+                            visible: true
+                        });
+                    }
+                }));
+
+                // from the fields layer
+            } else if (layer.fields) {
+
+                array.forEach(layer.fields, lang.hitch(this, function (field) {
+                    this.addDefaultFieldInfo(fieldInfos, {
+                        fieldName: field.name,
+                        label: field.alias === field.name ? this.makeSentenceCase(field.name) : field.alias,
+                        visible: true
+                    });
+                }));
+            }
+
+            if (fieldInfos.length > 0) {
+                popup = {
+                    title: layerName,
+                    fieldInfos: fieldInfos,
+                    showAttachments: (layer.hasAttachments)
+                };
+            }
+
+            return popup;
+        },
+        /**
+         * converts a string to a nice sentence case format
+         * @url http://stackoverflow.com/questions/196972/convert-string-to-title-case-with-javascript
+         * @param  {string} str The string to convert
+         * @return {string}     The converted string
+         */
+        makeSentenceCase: function (str) {
+            if (!str.length) {
+                return '';
+            }
+            str = str.toLowerCase().replace(/_/g, ' ').split(' ');
+            for (var i = 0; i < str.length; i++) {
+                str[i] = str[i].charAt(0).toUpperCase() + (str[i].substr(1).length ? str[i].substr(1) : '');
+            }
+            return (str.length ? str.join(' ') : str);
+        },
+
+        addDefaultFieldInfo: function (fieldInfos, field) {
+            var nameLC = field.fieldName.toLowerCase();
+            if (array.indexOf(this.excludedFields, nameLC) < 0) {
+                fieldInfos.push(field);
+            }
+        },
+
+        createIdentifyLayerList: function () {
+            var id = null;
+            var identifyItems = [];
+            var selectedId = this.identifyLayerDijit.get('value');
+            var sep = this.layerSeparator;
+
+            array.forEach(this.layers, lang.hitch(this, function (layer) {
+                var ref = layer.ref,
+                    selectedIds = layer.layerInfo.layerIds;
+                // only include layers that are currently visible
+                if (ref.visible) {
+                    var name = this.getLayerName(layer);
+                    if ((ref.declaredClass === 'esri.layers.FeatureLayer') && !isNaN(ref.layerId)) { // feature layer
+                        identifyItems.push({
+                            name: name,
+                            id: ref.id + sep + ref.layerId
+                        });
+                        // previously selected layer is still visible so keep it selected
+                        if (ref.id + sep + ref.layerId === selectedId) {
+                            id = selectedId;
+                        }
+                    } else { // dynamic layer
+                        array.forEach(ref.layerInfos, lang.hitch(this, function (layerInfo) {
+                            if (!this.includeSubLayer(layerInfo, layer, selectedIds)) {
+                                return;
+                            }
+                            identifyItems.push({
+                                name: name + ' \\ ' + layerInfo.name,
+                                id: ref.id + sep + layerInfo.id
+                            });
+                            // previously selected sublayer is still visible so keep it selected
+                            if (ref.id + sep + layerInfo.id === selectedId) {
+                                id = selectedId;
+                            }
+                        }));
+                    }
+                }
+            }));
+
+            identifyItems.sort(function (a, b) {
+                return (a.name > b.name) ? 1 : ((b.name > a.name) ? -1 : 0);
+            });
+
+            this.identifyLayerDijit.set('disabled', (identifyItems.length < 1));
+            if (identifyItems.length > 0) {
+                identifyItems.unshift({
+                    name: this.i18n.labels.allVisibleLayers,
+                    id: '***'
+                });
+                if (!id) {
+                    id = identifyItems[0].id;
+                }
+            }
+            var identify = new Memory({
+                data: identifyItems
+            });
+            this.identifyLayerDijit.set('store', identify);
+            this.identifyLayerDijit.set('value', id);
+        },
+
+        includeSubLayer: function (layerInfo, layer, selectedIds) {
+            // exclude group layers
+            if (layerInfo.subLayerIds !== null) {
+                return false;
+            }
+
+            var ref = layer.ref;
+            if (this.isDefaultLayerVisibility(ref) && !this.checkVisibilityRecursive(layer, layerInfo.id)) {
+                return false;
+            } else if (array.indexOf(ref.visibleLayers, layerInfo.id) < 0) {
+                return false;
+            }
+            // only include sublayers that are within the current map scale
+            if (!this.layerVisibleAtCurrentScale(layerInfo)) {
+                return false;
+            }
+
+            // restrict which layers are included
+            if (selectedIds) {
+                if (array.indexOf(selectedIds, layerInfo.id) < 0) {
+                    return false;
+                }
+            }
+
+            // don't allow the layer if we don't have an  infoTemplate
+            // already and creating a default one is not desired
+            if (!this.createDefaultInfoTemplates) {
+                var infoTemplate = this.getInfoTemplate(ref, layerInfo.id);
+                if (!infoTemplate) {
+                    return false;
+                }
+            }
+
+            // all tests pass so include this sublayer
+            return true;
+        },
+
+        /**
+         * recursively check all a layer's parent(s) layers for visibility
+         * this only needs to be done if the layers visibleLayers array is
+         * set to the default visibleLayers. After setVisibleLayers
+         * is called the first time group layers are NOT included.
+         * @param  {object} layer layerInfo reference
+         * @param  {Integer} id   The sublayer id to check for visibility
+         * @return {Boolean}      Whether or not the sublayer is visible based on its parent(s) visibility
+         */
+        checkVisibilityRecursive: function (layer, id) {
+            var ref = layer.ref;
+            var layerInfos = array.filter(ref.layerInfos, function (layerInfo) {
+                return (layerInfo.id === id);
+            });
+            if (layerInfos.length > 0) {
+                var info = layerInfos[0];
+                if ((ref.visibleLayers.indexOf(id) !== -1) && (layer.layerInfo.ignoreDynamicGroupVisibility || info.parentLayerId === -1 || this.checkVisibilityRecursive(layer, info.parentLayerId))) {
+                    return true;
+                }
+            }
+            return false;
+        },
+        /**
+         * check each defaultVisibility and if its not in the visibleLayers
+         * array, then the layer has non-default layer visibility
+         * @param  {esri/layers/DynamicMapServiceLayer} layer The layer reference
+         * @return {Boolean}       Whether or not we're operating with the default visibleLayers array or not
+         */
+        isDefaultLayerVisibility: function (layer) {
+            for (var i = 0; i < layer.layerInfos.length; i++) {
+                var item = layer.layerInfos[i];
+                if (item.defaultVisibility && layer.visibleLayers.indexOf(item.id) === -1) {
+                    return false;
+                }
+            }
+            return true;
+        },
+
+        getLayerName: function (layer) {
+            var name = null;
+            if (layer.layerInfo) {
+                name = layer.layerInfo.title;
+            }
+            if (!name) {
+                array.forEach(this.layers, function (lyr) {
+                    if (lyr.ref.id === layer.id) {
+                        name = lyr.layerInfo.title;
+                        return;
+                    }
+                });
+            }
+            if (!name) {
+                name = layer.name;
+                if (!name && layer.ref) {
+                    name = layer.ref._titleForLegend; // fall back to old method using title from legend
+                }
+            }
+            return name;
+        },
+
+        getFeatureLayerForDynamicSublayer: function (layer, layerId) {
+            if (!layer.layerInfos) {
+                return false;
+            }
+            var key = layer.url + '/' + layerId;
+            if (!this.featureLayers.hasOwnProperty(key)) {
+                this.featureLayers[key] = new FeatureLayer(key);
+            }
+            return this.featureLayers[key];
+        },
+
+        layerVisibleAtCurrentScale: function (layer) {
+            var mapScale = this.map.getScale();
+            return !(((layer.maxScale !== 0 && mapScale < layer.maxScale) || (layer.minScale !== 0 && mapScale > layer.minScale)));
+        },
+
+        setMapClickMode: function (mode) {
+            this.mapClickMode = mode;
+            var map = this.map;
+            array.forEach(map.graphicsLayerIds, function (layerID) {
+                var layer = map.getLayer(layerID);
+                if (layer) {
+                    // add back any infoTemplates that
+                    // had been previously removed
+                    if (mode === 'identify') {
+                        if (this.infoTemplates[layer.id]) {
+                            layer.infoTemplate = lang.clone(this.infoTemplates[layer.id]);
+                        }
+                    // remove any infoTemplates that might
+                    // interfere with clicking on a feature
+                    } else if (layer.infoTemplate) {
+                        this.infoTemplates[layer.id] = lang.clone(layer.infoTemplate);
+                        layer.infoTemplate = null;
+                    }
+                }
+            }, this);
+        }
+    });
+});

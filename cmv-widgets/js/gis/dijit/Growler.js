@@ -1,7 +1,87 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dijit/_WidgetBase',
+    'dijit/_TemplatedMixin',
+    'dojo/_base/lang',
+    'dojo/dom-style',
+    'dojo/dom-construct',
+    'dojo/_base/fx',
+    'dojo/dom-class',
+    'dojo/topic',
+    'xstyle/css!./Growler/css/Growler.css'
+], function (declare, _WidgetBase, _TemplatedMixin, lang, Style, domConstruct, fx, domClass, topic) {
 
-define(["dojo/_base/declare","dijit/_WidgetBase","dijit/_TemplatedMixin","dojo/_base/lang","dojo/dom-style","dojo/dom-construct","dojo/_base/fx","dojo/dom-class","dojo/topic","xstyle/css!./Growler/css/Growler.css"],function(t,e,o,i,s,n,r,a,d){var h=t([e,o],{templateString:'<div class="growl ${level}" data-dojo-attach-event="onmouseover:hoverOver,onmouseout:hoverOut,onclick:close"><h3>${title}</h3><span data-dojo-attach-point="growlMessageNode"></span></div>',title:"Title",message:"Message",level:"default",timeout:1e4,opacity:1,_container:null,_timer:null,postCreate:function(){this.inherited(arguments),this._container?(s.set(this.domNode,"opacity",0),n.place(this.domNode,this._container),this.growlMessageNode.innerHTML=this.message,r.anim(this.domNode,{opacity:this.opacity},250),this.setTimeout()):d.publish("viewer/handleError",{source:"Growler",error:"Growl container not found/specified."})},setTimeout:function(){0<this.timeout&&(this._timer=setTimeout(i.hitch(this,"close"),this.timeout))},hoverOver:function(){clearInterval(this._timer),a.add(this.domNode,"hover")},hoverOut:function(){0<this.timeout&&this.setTimeout(),a.remove(this.domNode,"hover")},close:function(){r.anim(this.domNode,{opacity:0},500,null,i.hitch(this,"remove"))},remove:function(){r.anim(this.domNode,{height:0,margin:0},250,null,i.partial(n.destroy,this.domNode))}});return t([e,o],{templateString:'<div class="gis-dijit-Growl" data-dojo-attach-point="containerNode"></div>',postCreate:function(){this.inherited(arguments),this.own(d.subscribe("growler/growl",i.hitch(this,"growl")))},growl:function(t){t=t||{},i.mixin(t,{_container:this.containerNode}),new h(t).startup()}})});
-//# sourceMappingURL=Growler.js.map
+    // the growl itself
+    var Growl = declare([_WidgetBase, _TemplatedMixin], {
+        templateString: '<div class="growl ${level}" data-dojo-attach-event="onmouseover:hoverOver,onmouseout:hoverOut,onclick:close"><h3>${title}</h3><span data-dojo-attach-point="growlMessageNode"></span></div>',
+        title: 'Title',
+        message: 'Message',
+        level: 'default',
+        timeout: 10000,
+        opacity: 1.0,
+        _container: null,
+        _timer: null,
+        postCreate: function () {
+            this.inherited(arguments);
+            if (this._container) {
+                Style.set(this.domNode, 'opacity', 0);
+                domConstruct.place(this.domNode, this._container);
+                this.growlMessageNode.innerHTML = this.message;
+                fx.anim(this.domNode, {
+                    opacity: this.opacity
+                }, 250);
+                this.setTimeout();
+            } else {
+                topic.publish('viewer/handleError', {
+                    source: 'Growler',
+                    error: 'Growl container not found/specified.'
+                });
+            }
+        },
+        setTimeout: function () {
+            if (this.timeout > 0) {
+                this._timer = setTimeout(lang.hitch(this, 'close'), this.timeout);
+            }
+        },
+        hoverOver: function () {
+            clearInterval(this._timer);
+            domClass.add(this.domNode, 'hover');
+        },
+        hoverOut: function () {
+            if (this.timeout > 0) {
+                this.setTimeout();
+            }
+            domClass.remove(this.domNode, 'hover');
+        },
+        close: function () {
+            fx.anim(this.domNode, {
+                opacity: 0
+            }, 500, null, lang.hitch(this, 'remove'));
+        },
+        remove: function () {
+            fx.anim(this.domNode, {
+                height: 0,
+                margin: 0
+            }, 250, null, lang.partial(domConstruct.destroy, this.domNode));
+        }
+    });
+
+    // main growler dijit container
+    var Growler = declare([_WidgetBase, _TemplatedMixin], {
+        templateString: '<div class="gis-dijit-Growl" data-dojo-attach-point="containerNode"></div>',
+        postCreate: function () {
+            this.inherited(arguments);
+            this.own(topic.subscribe('growler/growl', lang.hitch(this, 'growl')));
+        },
+        growl: function (props) {
+            props = props || {};
+            lang.mixin(props, {
+                _container: this.containerNode
+            });
+            var g = new Growl(props);
+            g.startup();
+        }
+    });
+
+    return Growler;
+});

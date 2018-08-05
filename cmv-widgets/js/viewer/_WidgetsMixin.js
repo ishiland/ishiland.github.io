@@ -1,7 +1,405 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/array',
+    'dojo/_base/lang',
+    'dojo/aspect',
+    'dojo/promise/all',
+    'dojo/Deferred',
+    'dojo/dom-construct',
+    'dojo/query',
 
-define(["dojo/_base/declare","dojo/_base/array","dojo/_base/lang","dojo/aspect","dojo/promise/all","dojo/Deferred","dojo/dom-construct","dojo/query","dijit/Menu","dijit/layout/ContentPane","gis/dijit/FloatingTitlePane","gis/dijit/ExpandPane","gis/dijit/FloatingWidgetDialog"],function(e,p,o,t,n,r,s,a,i,d,c,l,h){return e(null,{legendLayerInfos:[],editorLayerInfos:[],identifyLayerInfos:[],layerControlLayerInfos:[],widgets:{},widgetTypes:["contentPane","domNode","expandPane","floating","invisible","layer","layout","loading","map","titlePane","ui"],widgetLayerInfos:["editor","identify","layerControl","legend"],postConfig:function(e){var t=null;if(e)t=new r,e.then(o.hitch(this,function(){n(this.createWidgets(["loading"])).then(t.resolve)}));else{var i=this.createWidgets(["loading"]);i&&i.length&&(t=n(i))}return this.inherited(arguments)||t},startup:function(){this.inherited(arguments),this.widgetTypes=this.widgetTypes.concat(this.config.widgetTypes||[]),this.widgetLayerInfos=this.widgetLayerInfos.concat(this.config.widgetlayerInfos||[]),this.mapDeferred&&this.mapDeferred.then(o.hitch(this,"createWidgets",["map","layer"])),this.layoutDeferred&&(this.layoutDeferred.then(o.hitch(this,"createWidgets",["layout"])),n([this.mapDeferred,this.layoutDeferred]).then(o.hitch(this,"createWidgets",null)))},createWidgets:function(e){var i=[],n=[],a=[],o=[];for(var t in e=e||this.widgetTypes,this.config.widgets)if(this.config.widgets.hasOwnProperty(t)){var r=this.config.widgets[t];r.widgetKey=r.widgetKey||r.id||t,r.include&&!this.widgets[r.widgetKey]&&0<=p.indexOf(e,r.type)&&("titlePane"!==r.type&&"contentPane"!==r.type||r.placeAt||r.uiOptions||(r.placeAt="left"),r.position=this._getPosition(r),i.push(r),this.widgets[t]=!0)}function s(t){return n=p.filter(i,function(e){return!(!e.placeAt||e.placeAt!==t)&&(a.push(e.widgetKey),!0)})}function d(e,t){var i=this.widgetLoader(e,t);i&&o.push(i)}for(var c in this.panes)this.panes.hasOwnProperty(c)&&"outer"!==c&&"center"!==c&&((n=s(c)).sort(function(e,t){return e.position-t.position}),0<n.length&&0!==n[0].position&&(n[0].position=0),p.forEach(n,d,this));return(n=p.filter(i,function(e){return p.indexOf(a,e.widgetKey)<0})).sort(function(e,t){return e.position-t.position}),p.forEach(n,d,this),o},widgetLoader:function(e,t){var i=null,n=this.widgetTypes,a=new r;return p.indexOf(n,e.type)<0?(this.handleError({source:"Controller",error:'Widget type "'+e.type+'" ('+e.title+") at position "+t+" is not supported."}),null):(e.watched=e.watched||"open",this._isPaneWidget(e.type)&&(i=e.parentWidget=this._createParentWidget(e,t)),e.preload=void 0===e.preload||e.preload,e.preload?this._loadWidget(e,a):e.watchHandle=i.watch(e.watched,o.hitch(this,"_loadWidget",e,a)),a)},_loadWidget:function(i,n){"string"==typeof i.options?require([i.options,i.path],o.hitch(this,function(e,t){this.createWidget(i,e,t),n.resolve()})):require([i.path],o.hitch(this,function(e){this.createWidget(i,i.options,e),n.resolve()})),i.watchHandle&&(i.watchHandle.unwatch(),i.watchHandle.remove())},createWidget:function(e,t,i){var n=e.widgetKey;if(n){var a=new i(t=this._setWidgetOptions(e,t),e.srcNodeRef),o=t.parentWidget||{};this._placeWidget(a,o,e),a&&"function"==typeof a.startup&&!a._started&&a.startup(),this.widgets[n]=a,this._hideWidgetLoader(o)}},_setWidgetOptions:function(e,t){return e.id&&(t.id=e.id+"_widget"),t.parentWidget=e.parentWidget,t.map&&(t.map=this.map),t.mapRightClickMenu&&(this.mapRightClickMenu||(this.mapRightClickMenu=new i({targetNodeIds:[this.map.root],selector:".esriMapLayers"}),this.mapRightClickMenu.startup()),t.mapRightClickMenu=this.mapRightClickMenu),t.mapClickMode&&(t.mapClickMode=this.mapClickMode.current),p.forEach(this.widgetLayerInfos,o.hitch(this,function(e){t[e+="LayerInfos"]&&this[e]&&(t.layerInfos=this[e])})),t},_showWidgetLoader:function(e){e&&e.containerNode&&(e.loadingNode=s.create("div",{className:"widgetLoader",innerHTML:'<i class="fas fa-spinner fa-pulse fa-fw"></i>'},e.containerNode,"first"))},_hideWidgetLoader:function(e){e&&e.loadingNode&&require(["dojo/domReady!"],function(){s.destroy(e.loadingNode)})},_createTitlePaneWidget:function(e){var t=o.mixin({open:e.open||!1,canFloat:e.canFloat||!1,resizable:e.resizable||!1,sidebar:this._getPlaceAt(e)},e.paneOptions||{});return"expandPane"===e.type?new l(t):new c(t)},_createFloatingWidget:function(e){return new h(e.paneOptions)},_createContentPaneWidget:function(e){var t=o.mixin({region:e.region||"center"},e.paneOptions||{});return e.className&&(t.className=e.className),new d(t)},_createParentWidget:function(e,t){var i=e.widgetKey+"_parent",n=null;switch(e.position=t,e.srcNodeRef=e.srcNodeRef||s.create("div"),e.paneOptions=o.mixin({id:i,title:e.title,class:i+" "+e.type+"Widget",iconClass:e.iconClass},e.paneOptions||{}),e.type){case"titlePane":case"expandPane":n=this._createTitlePaneWidget(e);break;case"contentPane":n=this._createContentPaneWidget(e),e.preload=!0;break;case"floating":n=this._createFloatingWidget(e)}var a=this._getPlaceAt(e);return a&&"function"==typeof n.placeAt&&n.placeAt(a),"function"!=typeof n.startup||n._started||n.startup(),this._showWidgetLoader(n),e.preload=e.preload||n.get(e.watched)||"function"!=typeof n.watch,n},_isPaneWidget:function(e){return 0<=p.indexOf(["titlePane","contentPane","expandPane","floating"],e)},_placeWidget:function(e,t,i){var n=t.containerNode||this._getPlaceAt(i);return n?"function"==typeof e.placeAt?e.placeAt(n,i.position):s.place(e.domNode,n,i.position):null},_getPlaceAt:function(e){var t=e.placeAt;if("string"==typeof t)if(this.panes[t])t=this.panes[t];else{e.uiOptions&&(t=e.uiOptions.position||t);0<=p.indexOf(["top-left","top-center","top-right","center-left","center-center","center-right","bottom-left","bottom-center","bottom-right","manual"],t)&&(t="manual"===t?".cmv-ui-map .cmv-ui-top-left":".cmv-ui-inset .cmv-ui-"+t);var i=a(t);i&&0<i.length&&(t=i[0])}return t},_getPosition:function(e){var t=e.position;return null==t&&(t=e.uiOptions&&e.uiOptions.index||1e4),t}})});
-//# sourceMappingURL=_WidgetsMixin.js.map
+    'dijit/Menu',
+    'dijit/layout/ContentPane',
+
+    'gis/dijit/FloatingTitlePane',
+    'gis/dijit/ExpandPane',
+    'gis/dijit/FloatingWidgetDialog'
+
+], function (
+    declare,
+    array,
+    lang,
+    aspect,
+    promiseAll,
+    Deferred,
+    domConstruct,
+    domQuery,
+
+    Menu,
+    ContentPane,
+    FloatingTitlePane,
+    ExpandPane,
+    FloatingWidgetDialog
+) {
+
+    return declare(null, {
+
+        legendLayerInfos: [],
+        editorLayerInfos: [],
+        identifyLayerInfos: [],
+        layerControlLayerInfos: [],
+
+        widgets: {},
+        widgetTypes: ['contentPane', 'domNode', 'expandPane', 'floating', 'invisible', 'layer', 'layout', 'loading', 'map', 'titlePane', 'ui'],
+        widgetLayerInfos: ['editor', 'identify', 'layerControl', 'legend'],
+        postConfig: function (wait) {
+
+            var waitDeferred = null;
+            if (wait) {
+                waitDeferred = new Deferred();
+
+                wait.then(lang.hitch(this, function () {
+                    // load loading widgets
+                    promiseAll(this.createWidgets(['loading'])).then(waitDeferred.resolve);
+                }));
+            } else {
+                var deferreds = this.createWidgets(['loading']);
+                if (deferreds && deferreds.length) {
+                    waitDeferred = promiseAll(deferreds);
+                }
+            }
+
+            return this.inherited(arguments) || waitDeferred;
+        },
+        startup: function () {
+            this.inherited(arguments);
+
+            // add any user-defined widget types
+            this.widgetTypes = this.widgetTypes.concat(this.config.widgetTypes || []);
+
+            // add any user-defined widget layerInfos
+            this.widgetLayerInfos = this.widgetLayerInfos.concat(this.config.widgetlayerInfos || []);
+
+            if (this.mapDeferred) {
+                this.mapDeferred.then(lang.hitch(this, 'createWidgets', ['map', 'layer']));
+            }
+            if (this.layoutDeferred) {
+                this.layoutDeferred.then(lang.hitch(this, 'createWidgets', ['layout']));
+                promiseAll([this.mapDeferred, this.layoutDeferred])
+                    .then(lang.hitch(this, 'createWidgets', null));
+            }
+        },
+
+        createWidgets: function (widgetTypes) {
+            var widgets = [], paneWidgets = [], paneWidgetKeys = [], deferreds = [];
+
+            widgetTypes = widgetTypes || this.widgetTypes;
+            for (var key in this.config.widgets) {
+                if (this.config.widgets.hasOwnProperty(key)) {
+                    var widget = this.config.widgets[key];
+                    widget.widgetKey = widget.widgetKey || widget.id || key;
+                    if (widget.include && (!this.widgets[widget.widgetKey]) && (array.indexOf(widgetTypes, widget.type) >= 0)) {
+                        // default pane
+                        if ((widget.type === 'titlePane' || widget.type === 'contentPane') && (!widget.placeAt && !widget.uiOptions)) {
+                            widget.placeAt = 'left';
+                        }
+                        widget.position = this._getPosition(widget);
+                        widgets.push(widget);
+                        this.widgets[key] = true; // will be replaced by actual widget once created
+                    }
+                }
+            }
+
+            function getPaneWidgets (pane) {
+                paneWidgets = array.filter(widgets, function (paneWidget) {
+                    if (paneWidget.placeAt && paneWidget.placeAt === pane) {
+                        paneWidgetKeys.push(paneWidget.widgetKey);
+                        return true;
+                    }
+                    return false;
+                });
+                return paneWidgets;
+            }
+
+            function loadWidget (widgetConfig, i) {
+                var def = this.widgetLoader(widgetConfig, i);
+                if (def) {
+                    deferreds.push(def);
+                }
+            }
+
+            for (var pane in this.panes) {
+                if (this.panes.hasOwnProperty(pane) && pane !== 'outer' && pane !== 'center') {
+                    paneWidgets = getPaneWidgets(pane);
+                    paneWidgets.sort(function (a, b) {
+                        return a.position - b.position;
+                    });
+                    if (paneWidgets.length > 0 && paneWidgets[0].position !== 0) {
+                        paneWidgets[0].position = 0;
+                    }
+                    array.forEach(paneWidgets, loadWidget, this);
+                }
+            }
+
+            paneWidgets = array.filter(widgets, function (paneWidget) {
+                return (array.indexOf(paneWidgetKeys, paneWidget.widgetKey) < 0);
+            });
+            paneWidgets.sort(function (a, b) {
+                return a.position - b.position;
+            });
+
+            array.forEach(paneWidgets, loadWidget, this);
+            return deferreds;
+        },
+
+        widgetLoader: function (widgetConfig, position) {
+            var pnl = null,
+                widgetTypes = this.widgetTypes,
+                deferred = new Deferred();
+
+            // only proceed for valid widget types
+            if (array.indexOf(widgetTypes, widgetConfig.type) < 0) {
+                this.handleError({
+                    source: 'Controller',
+                    error: 'Widget type "' + widgetConfig.type + '" (' + widgetConfig.title + ') at position ' + position + ' is not supported.'
+                });
+                return null;
+            }
+
+            // build a parent widget to contain the new widget
+            widgetConfig.watched = widgetConfig.watched || 'open';
+            if (this._isPaneWidget(widgetConfig.type)) {
+                pnl = widgetConfig.parentWidget = this._createParentWidget(widgetConfig, position);
+            }
+
+            widgetConfig.preload = (typeof widgetConfig.preload === 'undefined') ? true : widgetConfig.preload;
+            if (!widgetConfig.preload) {
+                widgetConfig.watchHandle = pnl.watch(widgetConfig.watched, lang.hitch(this, '_loadWidget', widgetConfig, deferred));
+            } else {
+                this._loadWidget(widgetConfig, deferred);
+            }
+            return deferred;
+        },
+
+        _loadWidget: function (widgetConfig, deferred) {
+            // 2 ways to use require to accommodate widgets that may have an optional separate configuration file
+            if (typeof widgetConfig.options === 'string') {
+                require([widgetConfig.options, widgetConfig.path], lang.hitch(this, function (options, WidgetClass) {
+                    this.createWidget(widgetConfig, options, WidgetClass);
+                    deferred.resolve();
+                }));
+            } else {
+                require([widgetConfig.path], lang.hitch(this, function (WidgetClass) {
+                    this.createWidget(widgetConfig, widgetConfig.options, WidgetClass);
+                    deferred.resolve();
+                }));
+            }
+            if (widgetConfig.watchHandle) {
+                widgetConfig.watchHandle.unwatch();
+                widgetConfig.watchHandle.remove();
+            }
+        },
+
+        createWidget: function (widgetConfig, options, WidgetClass) {
+            var key = widgetConfig.widgetKey;
+            if (!key) {
+                return;
+            }
+
+            // set any additional options
+            options = this._setWidgetOptions(widgetConfig, options);
+
+            // create the widget
+            var widget = new WidgetClass(options, widgetConfig.srcNodeRef),
+                pnl = options.parentWidget || {};
+            this._placeWidget(widget, pnl, widgetConfig);
+
+            // start up the widget
+            if (widget && (typeof widget.startup === 'function') && !widget._started) {
+                widget.startup();
+            }
+            this.widgets[key] = widget;
+            this._hideWidgetLoader(pnl);
+        },
+
+        _setWidgetOptions: function (widgetConfig, options) {
+            if (widgetConfig.id) {
+                options.id = widgetConfig.id + '_widget';
+            }
+            options.parentWidget = widgetConfig.parentWidget;
+
+            //replace config map, layerInfos arrays, etc
+            if (options.map) {
+                options.map = this.map;
+            }
+            if (options.mapRightClickMenu) {
+                // create right-click menu
+                if (!this.mapRightClickMenu) {
+                    this.mapRightClickMenu = new Menu({
+                        targetNodeIds: [this.map.root],
+                        selector: '.esriMapLayers' // restrict to map only
+                    });
+                    this.mapRightClickMenu.startup();
+                }
+                options.mapRightClickMenu = this.mapRightClickMenu;
+            }
+            if (options.mapClickMode) {
+                options.mapClickMode = this.mapClickMode.current;
+            }
+            array.forEach(this.widgetLayerInfos, lang.hitch(this, function (key) {
+                key += 'LayerInfos';
+                if (options[key] && this[key]) {
+                    options.layerInfos = this[key];
+                }
+            }));
+            return options;
+        },
+
+        _showWidgetLoader: function (pnl) {
+            if (pnl && pnl.containerNode) {
+                pnl.loadingNode = domConstruct.create('div', {className: 'widgetLoader', innerHTML: '<i class="fas fa-spinner fa-pulse fa-fw"></i>'}, pnl.containerNode, 'first');
+            }
+        },
+
+        _hideWidgetLoader: function (pnl) {
+            if (pnl && pnl.loadingNode) {
+                require(['dojo/domReady!'], function () {
+                    domConstruct.destroy(pnl.loadingNode);
+                });
+            }
+        },
+
+        _createTitlePaneWidget: function (widgetConfig) {
+            var options = lang.mixin({
+                open: widgetConfig.open || false,
+                canFloat: widgetConfig.canFloat || false,
+                resizable: widgetConfig.resizable || false,
+                sidebar: this._getPlaceAt(widgetConfig)
+            }, widgetConfig.paneOptions || {});
+
+            if (widgetConfig.type === 'expandPane') {
+                return new ExpandPane(options);
+            }
+            return new FloatingTitlePane(options);
+        },
+
+        _createFloatingWidget: function (widgetConfig) {
+            return new FloatingWidgetDialog(widgetConfig.paneOptions);
+        },
+
+        _createContentPaneWidget: function (widgetConfig) {
+            var options = lang.mixin({
+                region: widgetConfig.region || 'center'
+            }, widgetConfig.paneOptions || {});
+            if (widgetConfig.className) {
+                options.className = widgetConfig.className;
+            }
+            return new ContentPane(options);
+        },
+
+        _createParentWidget: function (widgetConfig, position) {
+            var parentId = widgetConfig.widgetKey + '_parent',
+                pnl = null;
+
+            widgetConfig.position = position;
+            widgetConfig.srcNodeRef = widgetConfig.srcNodeRef || domConstruct.create('div');
+
+            widgetConfig.paneOptions = lang.mixin({
+                id: parentId,
+                title: widgetConfig.title,
+                class: parentId + ' ' + widgetConfig.type + 'Widget',
+                iconClass: widgetConfig.iconClass
+            }, widgetConfig.paneOptions || {});
+
+            switch (widgetConfig.type) {
+            case 'titlePane':
+            case 'expandPane':
+                pnl = this._createTitlePaneWidget(widgetConfig);
+                break;
+            case 'contentPane':
+                pnl = this._createContentPaneWidget(widgetConfig);
+                widgetConfig.preload = true;
+                break;
+            case 'floating':
+                pnl = this._createFloatingWidget(widgetConfig);
+                break;
+            default:
+            }
+
+            var placeAt = this._getPlaceAt(widgetConfig);
+            if (placeAt && (typeof pnl.placeAt === 'function')) {
+                pnl.placeAt(placeAt);
+            }
+            if ((typeof pnl.startup === 'function') && !pnl._started) {
+                pnl.startup();
+            }
+            this._showWidgetLoader(pnl);
+
+            widgetConfig.preload = (widgetConfig.preload) || pnl.get(widgetConfig.watched) || (typeof pnl.watch !== 'function');
+            return pnl;
+        },
+
+        _isPaneWidget: function (type) {
+            var types = ['titlePane', 'contentPane', 'expandPane', 'floating'];
+            return (array.indexOf(types, type) >= 0);
+        },
+
+        _placeWidget: function (widget, pnl, widgetConfig) {
+            var placeAt = pnl.containerNode || this._getPlaceAt(widgetConfig);
+            if (placeAt) {
+                if (typeof widget.placeAt === 'function') {
+                    return widget.placeAt(placeAt, widgetConfig.position);
+                }
+                return domConstruct.place(widget.domNode, placeAt, widgetConfig.position);
+            }
+            return null;
+        },
+
+        _getPlaceAt: function (widgetConfig) {
+            var placeAt = widgetConfig.placeAt;
+
+            if (typeof placeAt === 'string') {
+                // is it a dojo pane?
+                // possible unintended consequences  if pane has same key as shortcuts below
+                if (this.panes[placeAt]) {
+                    placeAt = this.panes[placeAt];
+
+                } else {
+                    if (widgetConfig.uiOptions) {
+                        // for compatibility with 4.x api's use of 'position'
+                        placeAt = widgetConfig.uiOptions.position || placeAt;
+                    }
+
+                    // convert 4.x-style shortcuts to a css selector.
+                    var posShortCuts = [
+                        'top-left', 'top-center', 'top-right',
+                        'center-left', 'center-center', 'center-right',
+                        'bottom-left', 'bottom-center', 'bottom-right',
+                        'manual'
+                    ];
+                    if (array.indexOf(posShortCuts, placeAt) >= 0) {
+                        if (placeAt === 'manual') {
+                            // if you don't want the top-left, you must provide
+                            // the full css selector or some in-line styling
+                            placeAt = '.cmv-ui-map .cmv-ui-top-left';
+                        } else {
+                            placeAt = '.cmv-ui-inset .cmv-ui-' + placeAt;
+                        }
+                    }
+
+                    // is it css selector?
+                    var domNodes = domQuery(placeAt);
+                    if (domNodes && domNodes.length > 0) {
+                        placeAt = domNodes[0];
+                    }
+                }
+            }
+            // might also be a widget or the id of a widget or the id of a DOMNode
+            return placeAt;
+        },
+
+        _getPosition: function (widgetConfig) {
+            var position = widgetConfig.position;
+            // default position
+            if (position === null || typeof position === 'undefined') {
+                if (widgetConfig.uiOptions) {
+                    // for compatibility with 4.x api's use of 'index'
+                    position = widgetConfig.uiOptions.index || 10000;
+                } else {
+                    position = 10000;
+                }
+            }
+            return position;
+        }
+    });
+});

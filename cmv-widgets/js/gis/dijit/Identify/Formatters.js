@@ -1,7 +1,21 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
-
-define(["dojo/number","dojo/date/locale"],function(o,r){return{formatInt:function(t){return o.format(t)},formatFloat:function(t){return o.format(t,{places:3})},formatDate:function(t){var o=new Date(t);return r.format(o,{formatLength:"short"})}}});
-//# sourceMappingURL=Formatters.js.map
+define([
+    'dojo/number',
+    'dojo/date/locale'
+], function (number, locale) {
+    return {
+        formatInt: function (value) {
+            return number.format(value);
+        },
+        formatFloat: function (value) {
+            return number.format(value, {
+                places: 3
+            });
+        },
+        formatDate: function (value) {
+            var date = new Date(value);
+            return locale.format(date, {
+                formatLength: 'short'
+            });
+        }
+    };
+});

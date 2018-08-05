@@ -1,7 +1,133 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
-
-define(["dojo/_base/declare","dijit/Menu","dijit/MenuItem","dijit/PopupMenuItem","dijit/MenuSeparator","./Transparency","dojo/i18n!./../nls/resource"],function(e,s,t,c,f,w,p){return e(s,{control:null,_removed:!1,postCreate:function(){this.inherited(arguments);var e=this.control,a=e.layer,n=e.controlOptions,o=e.controller,l=e._layerType,i=this;if(("vector"===l&&o.vectorReorder||"overlay"===l&&o.overlayReorder)&&(e._reorderUp=new t({label:p.moveUp,iconClass:"fas fa-fw fa-sort-up",onClick:function(){o._moveUp(e)}}),i.addChild(e._reorderUp),e._reorderDown=new t({label:p.moveDown,iconClass:"fas fa-fw fa-sort-down",onClick:function(){o._moveDown(e)}}),i.addChild(e._reorderDown),i.addChild(new f)),e._dynamicToggleMenuItems&&e._dynamicToggleMenuItems(i),(!0!==n.noZoom&&!0!==o.noZoom||!0===o.noZoom&&!1===n.noZoom)&&i.addChild(new t({label:p.zoomTo,iconClass:"fas fa-fw fa-search",onClick:function(){o._zoomToLayer(a)}})),(!0!==n.noTransparency&&!0!==o.noTransparency||!0===o.noTransparency&&!1===n.noTransparency)&&i.addChild(new w({label:p.transparency,iconClass:"fas fa-fw fa-adjust",layer:a})),!0===n.swipe||!0===o.swipe&&!1!==n.swipe){var r=new s;r.addChild(new t({label:p.layerSwipeVertical,iconClass:"fas fa-fw fa-sort fa-rotate-90",onClick:function(){o._swipeLayer(a,"vertical")}})),r.addChild(new t({label:p.layerSwipeHorizontal,iconClass:"fas fa-fw fa-sort",onClick:function(){o._swipeLayer(a,"horizontal")}})),!0===n.swipeScope&&r.addChild(new t({label:p.layerSwipeScope,iconClass:"fas fa-fw fa-circle",onClick:function(){o._swipeLayer(a,"scope")}})),i.addChild(new c({label:p.layerSwipe,iconClass:"fas fa-fw fa-sort",popup:r}))}!0===n.metadataUrl&&a.url&&(i.addChild(new f),i.addChild(new t({label:p.metadata,iconClass:"fas fa-fw fa-info-circle",onClick:function(){window.open(a.url,"_blank")}}))),n.metadataUrl&&"string"==typeof n.metadataUrl&&(i.addChild(new f),i.addChild(new t({label:p.metadata,iconClass:"fas fa-fw fa-info-circle",onClick:function(){window.open(n.metadataUrl,"_blank")}})));var d=i.getChildren()[i.getChildren().length-1];d&&d.isInstanceOf(f)&&i.removeChild(d)}})});
-//# sourceMappingURL=LayerMenu.js.map
+define([
+    'dojo/_base/declare',
+    'dijit/Menu',
+    'dijit/MenuItem',
+    'dijit/PopupMenuItem',
+    'dijit/MenuSeparator',
+    './Transparency',
+    'dojo/i18n!./../nls/resource'
+], function (
+    declare,
+    Menu,
+    MenuItem,
+    PopupMenuItem,
+    MenuSeparator,
+    Transparency,
+    i18n
+) {
+    return declare(Menu, {
+        control: null,
+        _removed: false, //for future use
+        postCreate: function () {
+            this.inherited(arguments);
+            var control = this.control,
+                layer = control.layer,
+                controlOptions = control.controlOptions,
+                controller = control.controller,
+                layerType = control._layerType,
+                self = this;
+            //reorder menu items
+            if ((layerType === 'vector' && controller.vectorReorder) || (layerType === 'overlay' && controller.overlayReorder)) {
+                control._reorderUp = new MenuItem({
+                    label: i18n.moveUp,
+                    iconClass: 'fas fa-fw fa-sort-up',
+                    onClick: function () {
+                        controller._moveUp(control);
+                    }
+                });
+                self.addChild(control._reorderUp);
+                control._reorderDown = new MenuItem({
+                    label: i18n.moveDown,
+                    iconClass: 'fas fa-fw fa-sort-down',
+                    onClick: function () {
+                        controller._moveDown(control);
+                    }
+                });
+                self.addChild(control._reorderDown);
+                self.addChild(new MenuSeparator());
+            }
+            // toggle all dynamic sublayers
+            if (control._dynamicToggleMenuItems) {
+                control._dynamicToggleMenuItems(self);
+            }
+            //zoom to layer
+            if ((controlOptions.noZoom !== true && controller.noZoom !== true) || (controller.noZoom === true && controlOptions.noZoom === false)) {
+                self.addChild(new MenuItem({
+                    label: i18n.zoomTo,
+                    iconClass: 'fas fa-fw fa-search',
+                    onClick: function () {
+                        controller._zoomToLayer(layer);
+                    }
+                }));
+            }
+            //transparency
+            if ((controlOptions.noTransparency !== true && controller.noTransparency !== true) || (controller.noTransparency === true && controlOptions.noTransparency === false)) {
+                self.addChild(new Transparency({
+                    label: i18n.transparency,
+                    iconClass: 'fas fa-fw fa-adjust',
+                    layer: layer
+                }));
+            }
+            //layer swipe
+            if (controlOptions.swipe === true || (controller.swipe === true && controlOptions.swipe !== false)) {
+                var swipeMenu = new Menu();
+                swipeMenu.addChild(new MenuItem({
+                    label: i18n.layerSwipeVertical,
+                    iconClass: 'fas fa-fw fa-sort fa-rotate-90',
+                    onClick: function () {
+                        controller._swipeLayer(layer, 'vertical');
+                    }
+                }));
+                swipeMenu.addChild(new MenuItem({
+                    label: i18n.layerSwipeHorizontal,
+                    iconClass: 'fas fa-fw fa-sort',
+                    onClick: function () {
+                        controller._swipeLayer(layer, 'horizontal');
+                    }
+                }));
+                if (controlOptions.swipeScope === true) {
+                    swipeMenu.addChild(new MenuItem({
+                        label: i18n.layerSwipeScope,
+                        iconClass: 'fas fa-fw fa-circle',
+                        onClick: function () {
+                            controller._swipeLayer(layer, 'scope');
+                        }
+                    }));
+                }
+                self.addChild(new PopupMenuItem({
+                    label: i18n.layerSwipe,
+                    iconClass: 'fas fa-fw fa-sort',
+                    popup: swipeMenu
+                }));
+            }
+            // metadata link
+            // service url
+            if (controlOptions.metadataUrl === true && layer.url) {
+                self.addChild(new MenuSeparator());
+                self.addChild(new MenuItem({
+                    label: i18n.metadata,
+                    iconClass: 'fas fa-fw fa-info-circle',
+                    onClick: function () {
+                        window.open(layer.url, '_blank');
+                    }
+                }));
+            }
+            // custom url
+            if (controlOptions.metadataUrl && typeof controlOptions.metadataUrl === 'string') {
+                self.addChild(new MenuSeparator());
+                self.addChild(new MenuItem({
+                    label: i18n.metadata,
+                    iconClass: 'fas fa-fw fa-info-circle',
+                    onClick: function () {
+                        window.open(controlOptions.metadataUrl, '_blank');
+                    }
+                }));
+            }
+            //if last child is a separator remove it
+            var lastChild = self.getChildren()[self.getChildren().length - 1];
+            if (lastChild && lastChild.isInstanceOf(MenuSeparator)) {
+                self.removeChild(lastChild);
+            }
+        }
+    });
+});

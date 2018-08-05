@@ -1,7 +1,349 @@
-/*  ConfigurableMapViewerCMV
- *  version 2.0.0-beta.2
- *  Project: https://cmv.io/
- */
+define([
+    'dojo/_base/declare',
+    'dojo/_base/lang',
+    'dojo/topic',
+    'dojo/_base/array',
+    'dojo/on',
+    'dojo/aspect',
+    'dojo/dom',
+    'dojo/query',
+    'dojo/dom-style',
+    'dojo/dom-class',
+    'dojo/dom-geometry',
+    'dojo/sniff',
+    'dojo/Deferred',
 
-define(["dojo/_base/declare","dojo/_base/lang","dojo/topic","dojo/_base/array","dojo/on","dojo/aspect","dojo/dom","dojo/query","dojo/dom-style","dojo/dom-class","dojo/dom-geometry","dojo/sniff","dojo/Deferred","put-selector","dijit/layout/BorderContainer","dijit/layout/ContentPane","esri/dijit/PopupMobile","dojo/text!./templates/mapOverlay.html"],function(e,a,r,t,o,s,d,i,l,p,h,n,c,u,f,g,b,m){return e(null,{panes:{left:{id:"sidebarLeft",placeAt:"outer",collapsible:!0,region:"left"},center:{id:"mapCenter",placeAt:"outer",region:"center",content:m}},collapseButtons:{},loadConfig:function(){return this.detectTouchDevices(),this.inherited(arguments)},postConfig:function(){return this.layoutDeferred=new c,this.inherited(arguments)},startup:function(){this.config.layout=this.config.layout||{},this.addTopics(),this.addTitles(),this.setPhoneInfoWindow(),this.initPanes(),this.mapDeferred.then(a.hitch(this,"createPanes")),this.layoutDeferred.resolve(),this.inherited(arguments)},addTopics:function(){r.subscribe("viewer/togglePane",a.hitch(this,function(e){this.togglePane(e.pane,e.show,e.suppressEvent)})),r.subscribe("viewer/loadWidget",a.hitch(this,function(e){this.widgetLoader(e.options,e.position)})),this.config.isDebug&&r.subscribe("viewer/handleError",a.hitch(this,"handleError")),r.subscribe("mapClickMode/setCurrent",a.hitch(this,function(e){this.mapClickMode.current=e,r.publish("mapClickMode/currentSet",e)})),r.subscribe("mapClickMode/setDefault",a.hitch(this,function(){r.publish("mapClickMode/setCurrent",this.mapClickMode.defaultMode)}))},addTitles:function(){if(this.config.titles){var e=this.config.titles;if(e.header){var t=d.byId("headerTitleSpan");t&&(t.innerHTML=e.header)}if(e.subHeader){var i=d.byId("subHeaderTitleSpan");i&&(i.innerHTML=e.subHeader)}e.pageTitle&&(document.title=e.pageTitle)}},initPanes:function(){var e,t=this.config.panes||{};for(e in this.defaultPanes=a.clone(this.panes),this.panes)this.defaultPanes.hasOwnProperty(e)&&(t[e]=a.mixin(this.defaultPanes[e],t[e]));var i,o,s,n=d.byId(this.config.layout.container)||document.body;for(e in this.panes.outer=new f({id:"borderContainerOuter",design:"sidebar",gutters:!1}).placeAt(n),t)t.hasOwnProperty(e)&&(i=a.clone(t[e]),o=this.panes[i.placeAt]||this.panes.outer,i.id=i.id||e,s=i.type,delete i.placeAt,delete i.type,delete i.collapsible,o&&("border"===s?this.panes[e]=new f(i).placeAt(o):i.region&&(this.panes[e]=new g(i).placeAt(o))));this.panes.outer.startup()},createPanes:function(){var e,t=this.config.panes||{};for(e in this.panes)this.defaultPanes.hasOwnProperty(e)&&(t[e]=a.mixin(this.defaultPanes[e],t[e]));for(e in this.collapseButtonsPane=this.config.collapseButtonsPane||"outer",t)if(t.hasOwnProperty(e)){if(t[e].collapsible&&(this.collapseButtons[e]=u(this.panes[this.collapseButtonsPane].domNode,"div.sidebarCollapseButton.sidebar"+e+"CollapseButton.sidebarCollapseButton"+("bottom"===e||"top"===e?"Vert":"Horz")+" div.dijitIcon.button.close").parentNode,o(this.collapseButtons[e],"click",a.hitch(this,"togglePane",e,null,!1)),this.positionSideBarToggle(e),"outer"===this.collapseButtonsPane)){var i=this.panes[e]._splitterWidget;i&&(s.after(i,"_startDrag",a.hitch(this,"_splitterStartDrag",e)),s.after(i,"_stopDrag",a.hitch(this,"_splitterStopDrag",e)))}void 0!==t[e].open&&this.togglePane(e,t[e].open,!0),"center"!==e&&this.panes[e]._splitterWidget&&(p.add(this.map.root.parentNode,"pane"+e),"right"===e&&this.panes.top&&p.add(this.panes.top.domNode,"pane"+e),"right"===e&&this.panes.bottom&&p.add(this.panes.bottom.domNode,"pane"+e),"left"===e&&this.panes.top&&p.add(this.panes.top.domNode,"pane"+e),"left"===e&&this.panes.bottom&&p.add(this.panes.bottom.domNode,"pane"+e))}this.resizeLayout()},togglePane:function(e,t,i){if(this.panes[e]){var o=this.panes[e].domNode;if(o){var s,n=l.get(o,"display");if("string"!=typeof t||"none"!==t&&"block"!==t)if("boolean"==typeof t)s=t?"block":"none";else{if(null!=t)return void this.handleError({source:"_LayoutMixin",error:'Invalid type passed as "show" property of "togglePane" function : '+typeof t});s="none"===n?"block":"none"}else s=t;t="block"===s,s!==n&&(l.set(o,"display",s),this.panes[e]._splitterWidget&&l.set(this.panes[e]._splitterWidget.domNode,"display",s),this.positionSideBarToggle(e),this.panes.outer&&this.panes.outer.resize(),i||r.publish("viewer/onTogglePane",{pane:e,show:t}))}}},positionSideBarToggle:function(e){var t=this.panes[e],i=this.collapseButtons[e];if(t&&i){var o=l.get(t.domNode,"display"),s="none"===o?"close":"open",n="none"===o?"open":"close";if(p.remove(i.children[0],s),p.add(i.children[0],n),"outer"===this.collapseButtonsPane){var a=t._splitterWidget?0:-1,r="bottom"===e||"top"===e?"h":"w";"block"===o&&(a+=h.getMarginBox(t.domNode)[r]),t._splitterWidget&&(a+=h.getMarginBox(t._splitterWidget.domNode)[r]),l.set(i,e,a.toString()+"px"),l.set(i,"display","block")}}},repositionSideBarButtons:function(){t.forEach(["left","right","top","bottom"],a.hitch(this,function(e){this.positionSideBarToggle(e)}))},resizeLayout:function(){this.panes.outer.resize()},_splitterStartDrag:function(e){var t=this.collapseButtons[e];l.set(t,"display","none")},_splitterStopDrag:function(e){this.positionSideBarToggle(e)},detectTouchDevices:function(){n("touch")&&(n("ios")||n("android")||n("bb"))&&(n.add("mobile",!0),screen.availWidth<500||screen.availHeight<500?n.add("phone",!0):n.add("tablet",!0))},setPhoneInfoWindow:function(){n("phone")&&!this.config.mapOptions.infoWindow&&(this.config.mapOptions.infoWindow=new b(null,u("div")))}})});
-//# sourceMappingURL=_LayoutMixin.js.map
+    'put-selector',
+
+    'dijit/layout/BorderContainer',
+    'dijit/layout/ContentPane',
+
+    'esri/dijit/PopupMobile',
+
+    'dojo/text!./templates/mapOverlay.html'
+], function (
+    declare,
+    lang,
+    topic,
+    array,
+    on,
+    aspect,
+    dom,
+    domQuery,
+    domStyle,
+    domClass,
+    domGeom,
+    has,
+    Deferred,
+
+    put,
+
+    BorderContainer,
+    ContentPane,
+
+    PopupMobile,
+
+    mapOverlay
+) {
+
+    return declare(null, {
+
+        panes: {
+            left: {
+                id: 'sidebarLeft',
+                placeAt: 'outer',
+                collapsible: true,
+                region: 'left'
+            },
+            center: {
+                id: 'mapCenter',
+                placeAt: 'outer',
+                region: 'center',
+                content: mapOverlay
+            }
+        },
+        collapseButtons: {},
+
+        loadConfig: function () {
+            this.detectTouchDevices();
+            return this.inherited(arguments);
+        },
+
+        postConfig: function () {
+            this.layoutDeferred = new Deferred();
+            return this.inherited(arguments);
+        },
+
+        startup: function () {
+            this.config.layout = this.config.layout || {};
+
+            this.addTopics();
+            this.addTitles();
+            this.setPhoneInfoWindow();
+            this.initPanes();
+
+            this.mapDeferred.then(lang.hitch(this, 'createPanes'));
+
+            // resolve the layout deferred
+            this.layoutDeferred.resolve();
+            this.inherited(arguments);
+        },
+
+        // add topics for subscribing and publishing
+        addTopics: function () {
+            // toggle a sidebar pane
+            topic.subscribe('viewer/togglePane', lang.hitch(this, function (args) {
+                this.togglePane(args.pane, args.show, args.suppressEvent);
+            }));
+
+            // load a widget
+            topic.subscribe('viewer/loadWidget', lang.hitch(this, function (args) {
+                this.widgetLoader(args.options, args.position);
+            }));
+
+            // setup error handler. centralize the debugging
+            if (this.config.isDebug) {
+                topic.subscribe('viewer/handleError', lang.hitch(this, 'handleError'));
+            }
+
+            // set the current mapClickMode
+            topic.subscribe('mapClickMode/setCurrent', lang.hitch(this, function (mode) {
+                this.mapClickMode.current = mode;
+                topic.publish('mapClickMode/currentSet', mode);
+            }));
+
+            // set the current mapClickMode to the default mode
+            topic.subscribe('mapClickMode/setDefault', lang.hitch(this, function () {
+                topic.publish('mapClickMode/setCurrent', this.mapClickMode.defaultMode);
+            }));
+
+        },
+
+        // set titles (if any)
+        addTitles: function () {
+            if (!this.config.titles) {
+                return;
+            }
+            var titles = this.config.titles;
+            if (titles.header) {
+                var headerTitleNode = dom.byId('headerTitleSpan');
+                if (headerTitleNode) {
+                    headerTitleNode.innerHTML = titles.header;
+                }
+            }
+            if (titles.subHeader) {
+                var subHeaderTitle = dom.byId('subHeaderTitleSpan');
+                if (subHeaderTitle) {
+                    subHeaderTitle.innerHTML = titles.subHeader;
+                }
+            }
+            if (titles.pageTitle) {
+                document.title = titles.pageTitle;
+            }
+        },
+        // setup all the sidebar panes
+        initPanes: function () {
+            var key,
+                panes = this.config.panes || {};
+            this.defaultPanes = lang.clone(this.panes);
+            for (key in this.panes) {
+                if (this.defaultPanes.hasOwnProperty(key)) {
+                    panes[key] = lang.mixin(this.defaultPanes[key], panes[key]);
+                }
+            }
+
+            var container = dom.byId(this.config.layout.container) || document.body;
+            this.panes.outer = new BorderContainer({
+                id: 'borderContainerOuter',
+                design: 'sidebar',
+                gutters: false
+            }).placeAt(container);
+
+            var options, placeAt, type;
+            for (key in panes) {
+                if (panes.hasOwnProperty(key)) {
+                    options = lang.clone(panes[key]);
+                    placeAt = this.panes[options.placeAt] || this.panes.outer;
+                    options.id = options.id || key;
+                    type = options.type;
+                    delete options.placeAt;
+                    delete options.type;
+                    delete options.collapsible;
+                    if (placeAt) {
+                        if (type === 'border') {
+                            this.panes[key] = new BorderContainer(options).placeAt(placeAt);
+                        } else if (options.region) {
+                            this.panes[key] = new ContentPane(options).placeAt(placeAt);
+                        }
+                    }
+                }
+            }
+            this.panes.outer.startup();
+        },
+
+        createPanes: function () {
+            var key,
+                panes = this.config.panes || {};
+            for (key in this.panes) {
+                if (this.defaultPanes.hasOwnProperty(key)) {
+                    panes[key] = lang.mixin(this.defaultPanes[key], panes[key]);
+                }
+            }
+            // where to place the buttons
+            // either the center map pane or the outer pane?
+            this.collapseButtonsPane = this.config.collapseButtonsPane || 'outer';
+
+            for (key in panes) {
+                if (panes.hasOwnProperty(key)) {
+                    if (panes[key].collapsible) {
+                        this.collapseButtons[key] = put(this.panes[this.collapseButtonsPane].domNode, 'div.sidebarCollapseButton.sidebar' + key + 'CollapseButton.sidebarCollapseButton' + ((key === 'bottom' || key === 'top') ? 'Vert' : 'Horz') + ' div.dijitIcon.button.close').parentNode;
+                        on(this.collapseButtons[key], 'click', lang.hitch(this, 'togglePane', key, null, false));
+                        this.positionSideBarToggle(key);
+                        if (this.collapseButtonsPane === 'outer') {
+                            var splitter = this.panes[key]._splitterWidget;
+                            if (splitter) {
+                                aspect.after(splitter, '_startDrag', lang.hitch(this, '_splitterStartDrag', key));
+                                aspect.after(splitter, '_stopDrag', lang.hitch(this, '_splitterStopDrag', key));
+                            }
+                        }
+                    }
+                    if (panes[key].open !== undefined) {
+                        this.togglePane(key, panes[key].open, true);
+                    }
+                    if (key !== 'center' && this.panes[key]._splitterWidget) {
+                        domClass.add(this.map.root.parentNode, 'pane' + key);
+                        if (key === 'right' && this.panes.top) {
+                            domClass.add(this.panes.top.domNode, 'pane' + key);
+                        }
+                        if (key === 'right' && this.panes.bottom) {
+                            domClass.add(this.panes.bottom.domNode, 'pane' + key);
+                        }
+                        if (key === 'left' && this.panes.top) {
+                            domClass.add(this.panes.top.domNode, 'pane' + key);
+                        }
+                        if (key === 'left' && this.panes.bottom) {
+                            domClass.add(this.panes.bottom.domNode, 'pane' + key);
+                        }
+                    }
+                }
+            }
+
+            this.resizeLayout();
+        },
+
+        togglePane: function (id, show, suppressEvent) {
+            if (!this.panes[id]) {
+                return;
+            }
+            var domNode = this.panes[id].domNode;
+            if (domNode) {
+                var oldDisp = domStyle.get(domNode, 'display');
+                var newDisp;
+
+                if (typeof(show) === 'string' && (show === 'none' || show === 'block')) {
+                    // Set (CSS Display Property)
+                    newDisp = show;
+                } else if (typeof(show) === 'boolean') {
+                    // Set (boolean)
+                    newDisp = (show) ? 'block' : 'none';
+                } else if (show === undefined || show === null) {
+                    // Toggle
+                    newDisp = (oldDisp === 'none') ? 'block' : 'none';
+                } else {
+                    this.handleError({
+                        source: '_LayoutMixin',
+                        error: 'Invalid type passed as "show" property of "togglePane" function : ' + typeof(show)
+                    });
+                    return;
+                }
+                show = (newDisp === 'block');
+
+                if (newDisp !== oldDisp) {
+                    domStyle.set(domNode, 'display', newDisp);
+                    if (this.panes[id]._splitterWidget) { // show/hide the splitter, if found
+                        domStyle.set(this.panes[id]._splitterWidget.domNode, 'display', newDisp);
+                    }
+                    this.positionSideBarToggle(id);
+                    if (this.panes.outer) {
+                        this.panes.outer.resize();
+                    }
+
+                    if (!suppressEvent) {
+                        topic.publish('viewer/onTogglePane', {
+                            pane: id,
+                            show: show
+                        });
+                    }
+                }
+            }
+        },
+
+        positionSideBarToggle: function (id) {
+            var pane = this.panes[id];
+            var btn = this.collapseButtons[id];
+            if (!pane || !btn) {
+                return;
+            }
+            var disp = domStyle.get(pane.domNode, 'display');
+            var rCls = (disp === 'none') ? 'close' : 'open';
+            var aCls = (disp === 'none') ? 'open' : 'close';
+            domClass.remove(btn.children[0], rCls);
+            domClass.add(btn.children[0], aCls);
+
+            // extra management required when the buttons
+            // are not in the center map pane
+            if (this.collapseButtonsPane === 'outer') {
+                var pos = (pane._splitterWidget) ? 0 : -1;
+                var orie = (id === 'bottom' || id === 'top') ? 'h' : 'w';
+                if (disp === 'block') { // pane is open
+                    pos += domGeom.getMarginBox(pane.domNode)[orie];
+                }
+                if (pane._splitterWidget) { // account for a splitter
+                    pos += domGeom.getMarginBox(pane._splitterWidget.domNode)[orie];
+                }
+                domStyle.set(btn, id, pos.toString() + 'px');
+                domStyle.set(btn, 'display', 'block');
+            }
+        },
+
+        repositionSideBarButtons: function () {
+            var btns = ['left', 'right', 'top', 'bottom'];
+            array.forEach(btns, lang.hitch(this, function (id) {
+                this.positionSideBarToggle(id);
+            }));
+        },
+
+        resizeLayout: function () {
+            this.panes.outer.resize();
+        },
+
+        // extra management of splitters required when the buttons
+        // are not in the center map pane
+        _splitterStartDrag: function (id) {
+            var btn = this.collapseButtons[id];
+            domStyle.set(btn, 'display', 'none');
+        },
+        _splitterStopDrag: function (id) {
+            this.positionSideBarToggle(id);
+        },
+
+        detectTouchDevices: function () {
+            if (has('touch') && (has('ios') || has('android') || has('bb'))) {
+                has.add('mobile', true);
+                if (screen.availWidth < 500 || screen.availHeight < 500) {
+                    has.add('phone', true);
+                } else {
+                    has.add('tablet', true);
+                }
+            }
+        },
+
+        setPhoneInfoWindow: function () {
+            // use the mobile popup for phones
+            if (has('phone') && !this.config.mapOptions.infoWindow) {
+                this.config.mapOptions.infoWindow = new PopupMobile(null, put('div'));
+            }
+
+        }
+    });
+});
