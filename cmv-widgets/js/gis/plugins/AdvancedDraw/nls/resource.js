@@ -27,7 +27,9 @@ define({
         },
         textTooltipDialog: {
             placeholder: 'Add text',
-            addText: 'Add Text'
+            addText: 'Add Text',
+            angle: 0,
+            angleLabel: 'Angle'
         },
         graphicMenu: {},
         undoManager: {
