@@ -98,17 +98,8 @@ define([
             this.editor.set('symbol', this.graphic.symbol.toJson());
 
             this.editor.watch('symbol', lang.hitch(this, function () {
-
-                var value;
-
-                if(this.graphic.attributes.draw_type==='text'){
-                    value = arguments[1];
-                }
-                else{
-                    value = arguments[2]
-                }
+                    var value = arguments[2]
                 this._updateGraphicWithSymbol(value);
-
             }));
 
             this._createContainers();
