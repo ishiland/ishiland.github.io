@@ -53,17 +53,27 @@
     text-shadow: 1px 1px 2px rgb(250, 250, 250), 0 0 1em white, 0 0 0.2em white;
 }
 
-.angleTooltipInput{
-    width:100px;
+/*.textTooltipItem{*/
+    /*margin-bottom: 10px;*/
+    /*font-size: 110%;*/
+/*}*/
+
+/*.textTooltipItemLabel{*/
+    /*font-size:smaller;*/
+    /*color:white;*/
+    /*display: block;*/
+/*}*/
+
+.symbolSelectItem{
+    margin-bottom: 10px;
+    /*display: table;*/
+}
+
+.symbolLabelItem{
+    font-size:smaller;
     display: block;
 }
 
-.angleTooltipInputNode{
-    margin-bottom: 10px;
-    font-size: 110%;
-}
-
-#angle-label{
-    font-size:smaller;
-    color:white;
+.textStyleButton > span{
+    padding: 3px  !important;
 }

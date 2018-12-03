@@ -6,39 +6,35 @@ define([
     './_SymEditorBase',
     './SymColorPicker',
     './StylePicker',
-    './NumericSlider'
+    './NumericSlider',
+    'dojo/i18n!../nls/resource'
 ], function (declare,
-    lang,
-    domStyle,
-    query,
-    _SymEditorBase,
-    SymColorPicker,
-    StylePicker,
-    NumericSlider) {
+             lang,
+             domStyle,
+             query,
+             _SymEditorBase,
+             SymColorPicker,
+             StylePicker,
+             NumericSlider,
+             i18n) {
 
     return declare(_SymEditorBase, {
 
-        constructor: function (options) {
+        symbol: null,
+        initialized: false,
+        editorLabel: i18n.widgets.smsEditor.defaultEditorLabel,
+        leftHandControlsLabel: i18n.widgets.smsEditor.leftHandControlsLabel,
+        rightHandControlsLabel: i18n.widgets.smsEditor.rightHandControlsLabel,
 
-            options = options || {};
-
-            if (!options.symbol) {
-                options.symbol = this.advancedDrawConfig.defaultPointSymbol;
-            }
-            lang.mixin(this, options);
-
-            this.initialized = false;
-            this.editorLabel = this.i18n.widgets.smsEditor.defaultEditorLabel;
-            this.leftHandControlsLabel = this.i18n.widgets.smsEditor.leftHandControlsLabel;
-            this.rightHandControlsLabel = this.i18n.widgets.smsEditor.rightHandControlsLabel;
-
-            this._set('symbol', this.symbol);
-
-        },
 
         postCreate: function () {
-
             this.inherited(arguments);
+
+            if (!this.symbol) {
+                this.symbol = this.params.config.defaultPointSymbol;
+            }
+            this._set('symbol', this.symbol);
+
 
             this._initSymbolStylePicker();
             this._initSymbolColorPicker();

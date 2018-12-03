@@ -1,6 +1,9 @@
 // the default configuration of symbols, layers, etc
 define([], function () {
     return {
+        map: true,
+        mapClickMode: true,
+        mapRightClickMenu: true,
         // default symbols
         defaultPolygonSymbol: {
             color: [0, 0, 0, 64],
@@ -37,18 +40,17 @@ define([], function () {
             verticalAlignment: 'middle',
             horizontalAlignment: 'center',
             text: 'New Text',
+            angle: 0,
             rotated: false,
             kerning: true,
-            //haloSize: 12, // no esrijs support - try to make it work
-            //haloColor: [255, 255, 255, 255], // no esrijs support - try to make it work
-            //borderLineSize: 12, // no esrijs support - try to make it work
-            //borderLineColor: [255, 0, 0, 255], // no esrijs support - try to make it work
+            haloSize: 1,
+            haloColor: [255, 255, 255, 255],
             font: {
-                size: 14,
-                style: 'normal',
-                variant: 'normal',
-                weight: 'bold',
-                family: 'sans-serif'
+                size: 12,
+                style: 'normal', // oblique, italic, normal
+                weight: 'normal', // bolder, bold, normal, lighter
+                family: 'sans-serif',
+                decoration: 'none' // underline | line-through | none
             }
         },
         // the map overlay when identifying a graphic
@@ -65,9 +67,8 @@ define([], function () {
             },
             closeOnChange: true //close color picker on selection of new color?
         },
+
         // advanced settings
-        //   only change here or via widget params if you know what you're doing!
-        //
         // default layer definition
         _layerDefinition: {
             objectIdField: 'OBJECTID',
@@ -88,7 +89,7 @@ define([], function () {
         // screen offsets for text tooltip dialog
         _textTooltipDialogOffset: {
             x: -12,
-            y: 0
+            y: 12
         },
         // snapping manager options
         _snappingOptions: {

@@ -4,7 +4,6 @@ define([
     'dijit/_WidgetBase',
     'dijit/_TemplatedMixin',
     'dojo/i18n!../nls/resource',
-    './../advancedDrawConfig',
     'dojo/text!./templates/_SymbolEditorBase.html',
     'xstyle/css!./css/_SymbolEditorBase.css',
     'xstyle/css!./css/SymbolEditor.css'
@@ -13,7 +12,6 @@ define([
     _WidgetBase,
     _TemplatedMixin,
     i18n,
-    advancedDrawConfig,
     template) {
 
     return declare([_WidgetBase, _TemplatedMixin], {
@@ -21,7 +19,9 @@ define([
         templateString: template,
         i18n: i18n,
         baseClass: 'symbolEditorBase',
-        advancedDrawConfig: advancedDrawConfig,
+        leftHandControlsLabel: 'Fill',
+        rightHandControlsLabel: 'Outline',
+        editorLabel: 'Symbol Editor',
 
         colorPickerOptions: {
             type: 'simple',
@@ -29,14 +29,6 @@ define([
                 paletteSize: '7x10'
             },
             closeOnChange: false
-        },
-
-        constructor: function () {
-
-            this.leftHandControlsLabel = 'Fill';
-            this.rightHandControlsLabel = 'Outline';
-            this.editorLabel = 'Symbol Editor';
-
         },
 
         removeLeftHandControls: function () {

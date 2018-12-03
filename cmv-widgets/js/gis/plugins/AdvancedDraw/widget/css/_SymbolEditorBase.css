@@ -22,13 +22,13 @@
     margin-right: 5px;
     /* margin-left: 5px; */
     /* margin-top: 5px; */
-    /* margin-bottom: 15px; */
+     margin-bottom: 0;
     vertical-align: top;
     width: calc(50% - 20px);
 }
 
 .symbolEditorBase .list-inline li > div {
-    margin-left: 3px;
+    /*margin-left: 3px;*/
 }
 
 .symbolEditorBase .list-inline div label {
@@ -61,8 +61,10 @@
 .symbolEditorBase .controlLabel {
     font-weight: normal;
     color: rgba(95, 96, 97, 0.99);
-    margin-left: 5px;
-    margin-bottom: 5px;
+    /*margin-left: 5px;*/
+    margin-left:0;
+    /*margin-bottom: 5px;*/
+    margin-bottom: 0;
     display: block;
     font-size: small;
 }

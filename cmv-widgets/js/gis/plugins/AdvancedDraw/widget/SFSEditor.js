@@ -6,39 +6,34 @@ define([
     './_SymEditorBase',
     './SymColorPicker',
     './StylePicker',
-    './NumericSlider'
+    './NumericSlider',
+    'dojo/i18n!../nls/resource'
 ], function (declare,
-    lang,
-    domStyle,
-    query,
-    _SymEditorBase,
-    SymColorPicker,
-    StylePicker,
-    NumericSlider) {
+             lang,
+             domStyle,
+             query,
+             _SymEditorBase,
+             SymColorPicker,
+             StylePicker,
+             NumericSlider,
+             i18n) {
 
     return declare(_SymEditorBase, {
 
-        constructor: function (options) {
-
-            options = options || {};
-
-            if (!options.symbol) {
-                options.symbol = this.advancedDrawConfig.defaultPolygonSymbol;
-            }
-            lang.mixin(this, options);
-
-            this.initialized = false;
-            this.editorLabel = this.i18n.widgets.sfsEditor.defaultEditorLabel;
-            this.leftHandControlsLabel = this.i18n.widgets.sfsEditor.leftHandControlsLabel;
-            this.rightHandControlsLabel = this.i18n.widgets.sfsEditor.rightHandControlsLabel;
-
-            this._set('symbol', this.symbol);
-
-        },
+        symbol: null,
+        initialized: false,
+        editorLabel: i18n.widgets.smsEditor.defaultEditorLabel,
+        leftHandControlsLabel: i18n.widgets.smsEditor.leftHandControlsLabel,
+        rightHandControlsLabel: i18n.widgets.smsEditor.rightHandControlsLabel,
 
         postCreate: function () {
-
             this.inherited(arguments);
+
+            if (!this.symbol) {
+                this.symbol = this.params.config.defaultPolygonSymbol;
+            }
+            this._set('symbol', this.symbol);
+
 
             this._initFillStylePicker();
             this._initFillColorPicker();
@@ -84,12 +79,6 @@ define([
         },
 
         _symbolStyleHasFill: function (style) {
-
-            // if (style === 'esriSFSSolid') {
-            //     return true;
-            // }
-            //
-            // return false;
             return style === 'esriSFSSolid';
         },
 

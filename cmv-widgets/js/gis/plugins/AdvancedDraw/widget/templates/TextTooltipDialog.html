@@ -6,14 +6,6 @@
                     <input data-dojo-attach-point="textNode" data-dojo-type="dijit/form/TextBox"
                            data-dojo-props="intermediateChanges: true, placeholder: '${i18n.textTooltipDialog.placeholder}'">
                 </div>
-                <div class="angleTooltipInputNode">
-                    <label id="angle-label">${i18n.textTooltipDialog.angleLabel}</label>
-                    <input
-                            class="angleTooltipInput" data-dojo-attach-point="angleNode"
-                            data-dojo-type="dijit/form/NumberSpinner"
-                            aria-labelledby="angle-label"
-                            data-dojo-props="intermediateChanges: true, value: ${i18n.textTooltipDialog.angle}, constraints: { min:0, max:360, places:0 }">
-                </div>
                 <div class="textTooltipButtons">
                     <button data-dojo-type="dijit/form/Button" data-dojo-attach-event="click: _add">
                         ${i18n.textTooltipDialog.addText}

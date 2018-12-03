@@ -8,21 +8,24 @@ define([
     './SMSEditor',
     './SLSEditor',
     './SFSEditor',
+    './TextEditor',
+
     '../undo/editSymbolGraphicOp',
     'dojo/i18n!../nls/resource',
     'xstyle/css!./css/GraphicSymbolEditor.css'
 
 ], function (declare,
-    lang,
-    Button,
-    ContentPane,
-    ConfirmDialog,
-    symUtil,
-    SMSEditor,
-    SLSEditor,
-    SFSEditor,
-    EditSymbolGraphicOp,
-    i18n) {
+             lang,
+             Button,
+             ContentPane,
+             ConfirmDialog,
+             symUtil,
+             SMSEditor,
+             SLSEditor,
+             SFSEditor,
+             TextEditor,
+             EditSymbolGraphicOp,
+             i18n) {
 
     return declare(ConfirmDialog, {
 
@@ -38,18 +41,13 @@ define([
             closeOnChange: true
         },
 
-        constructor: function (options) {
-
-            options = options || {};
-            lang.mixin(this, options);
-
-            this.editors = {
-                point: {control: SMSEditor, editorLabel: i18n.widgets.smsEditor.graphicEditorLabel},
-                polyline: {control: SLSEditor, editorLabel: i18n.widgets.slsEditor.graphicEditorLabel},
-                polygon: {control: SFSEditor, editorLabel: i18n.widgets.sfsEditor.graphicEditorLabel}
-            };
-
+        editors: {
+            text: {control: TextEditor, editorLabel: i18n.widgets.textEditor.graphicEditorLabel},
+            point: {control: SMSEditor, editorLabel: i18n.widgets.smsEditor.graphicEditorLabel},
+            polyline: {control: SLSEditor, editorLabel: i18n.widgets.slsEditor.graphicEditorLabel},
+            polygon: {control: SFSEditor, editorLabel: i18n.widgets.sfsEditor.graphicEditorLabel}
         },
+
 
         _getGraphicAttr: function () {
 
@@ -60,7 +58,6 @@ define([
         },
 
         _setGraphicAttr: function (value) {
-
             this.graphic = value;
             this._initialGraphicSymbol = lang.clone(value.symbol.toJson());
 
@@ -93,16 +90,23 @@ define([
         _createEditor: function (widget) {
 
             var Editor = widget.control;
-
             this.editor = new Editor({
                 editorLabel: widget.editorLabel,
-                colorPickerOptions: this.colorPickerOptions
+                colorPickerOptions: this.colorPickerOptions,
+                config: this.config
             });
             this.editor.set('symbol', this.graphic.symbol.toJson());
 
             this.editor.watch('symbol', lang.hitch(this, function () {
 
-                var value = arguments[2];
+                var value;
+
+                if(this.graphic.attributes.draw_type==='text'){
+                    value = arguments[1];
+                }
+                else{
+                    value = arguments[2]
+                }
                 this._updateGraphicWithSymbol(value);
 
             }));
@@ -117,10 +121,8 @@ define([
         _updateGraphicWithSymbol: function (value) {
 
             if (this.graphic) {
-
                 this.graphic.setSymbol(symUtil.fromJson(value));
                 this._updateUndoOpEndSym(value);
-
             }
 
         },

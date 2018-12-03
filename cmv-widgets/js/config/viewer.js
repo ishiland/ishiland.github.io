@@ -420,14 +420,14 @@ define([
             },
             advancedDraw: {
                 include: true,
-                open: false,
+                open: true,
                 position: 3,
                 id: 'advancedDraw',
                 title: 'Advanced Draw',
                 iconClass: 'fas fa-fw fa-pencil-alt',
                 type: 'titlePane',
                 path: 'gis/plugins/AdvancedDraw',
-                options: 'config/advancedDraw'
+                options: 'config/advancedDrawConfig'
             },
             myInfo: {
                 include: true,

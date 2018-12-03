@@ -9,9 +9,9 @@ define([
     'dojo/text!./templates/TextTooltipDialog.html',
     'dijit/popup',
     'esri/symbols/jsonUtils',
+    './SymColorPicker',
     'dijit/form/TextBox',
-    'dijit/form/Button',
-    'dijit/form/NumberSpinner'
+    'dijit/form/Button'
 ], function (declare,
              lang,
              domStyle,
@@ -23,6 +23,7 @@ define([
              popup,
              symbolJsonUtils) {
     return declare([TooltipDialog, _WidgetsInTemplateMixin], {
+
         templateString: template,
         baseClass: 'AdvancedDrawTextTooltipDialog',
         _graphic: null,
@@ -31,15 +32,14 @@ define([
         i18n: null,
         text: '',
 
+
         postCreate: function () {
             this.inherited(arguments);
             on(this, 'show', lang.hitch(this, '_show'));
-            // update text in real time b/c it looks bad ass
             on(this.textNode, 'change', lang.hitch(this, '_textChange'));
-            on(this.angleNode, 'change', lang.hitch(this, '_angleChange'));
-            // set key press evts
-            this.on('keypress', lang.hitch(this, '_keyPress'));
+            on(this.textNode, 'keypress', lang.hitch(this, '_keyPress'));
         },
+
 
         _show: function () {
             this.textNode.focus();
@@ -53,6 +53,7 @@ define([
             }
         },
 
+
         _textChange: function (value) {
             var symbol = this._graphic.symbol.toJson();
             if (value !== this.text) {
@@ -64,12 +65,6 @@ define([
             this._graphic.setSymbol(symbolJsonUtils.fromJson(symbol));
         },
 
-        _angleChange: function (value) {
-            var symbol = this._graphic.symbol.toJson();
-            symbol.angle = value;
-            symbol.text = this.text ? this.text : this._originalText;
-            this._graphic.setSymbol(symbolJsonUtils.fromJson(symbol));
-        },
 
         _keyPress: function (evt) {
             // enter adds text
@@ -81,6 +76,7 @@ define([
                 this._cancel();
             }
         },
+
 
         _add: function () {
             popup.close();

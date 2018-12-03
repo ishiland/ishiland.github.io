@@ -4,7 +4,7 @@ define([
     'dijit/_WidgetsInTemplateMixin',
     'dojo/text!./AdvancedDraw/templates/AdvancedDraw.html',
 
-    './AdvancedDraw/advancedDrawConfig', // default config and i18n
+    // './AdvancedDraw/advancedDrawConfig', // default config and i18n
     'dojo/i18n!./AdvancedDraw/nls/resource',
 
     'dojo/_base/declare', // dojo base
@@ -59,41 +59,41 @@ define([
     'xstyle/css!./AdvancedDraw/css/AdvancedDraw.css',
     'xstyle/css!./AdvancedDraw/css/adw-icons.css'
 ], function (_WidgetBase,
-    _TemplatedMixin,
-    _WidgetsInTemplateMixin,
-    template,
-    advancedDrawConfig,
-    i18n,
-    declare,
-    lang,
-    on,
-    topic,
-    keys,
-    html,
-    dom,
-    domGeom,
-    domClass,
-    Draw,
-    Edit,
-    GraphicsLayer,
-    FeatureLayer,
-    symbolUtils,
-    Graphic,
-    Polygon,
-    screenUtils,
-    webMercatorUtils,
-    UndoManager,
-    AddGraphicOp,
-    DeleteGraphicOp,
-    EditGeometryGraphicOp,
-    TextTooltipDialog,
-    DefaultSymbolEditors,
-    GraphicSymbolEditor,
-    popup,
-    Menu,
-    MenuItem,
-    PopupMenuItem,
-    CheckedMenuItem) {
+             _TemplatedMixin,
+             _WidgetsInTemplateMixin,
+             template,
+             // advancedDrawConfig,
+             i18n,
+             declare,
+             lang,
+             on,
+             topic,
+             keys,
+             html,
+             dom,
+             domGeom,
+             domClass,
+             Draw,
+             Edit,
+             GraphicsLayer,
+             FeatureLayer,
+             symbolUtils,
+             Graphic,
+             Polygon,
+             screenUtils,
+             webMercatorUtils,
+             UndoManager,
+             AddGraphicOp,
+             DeleteGraphicOp,
+             EditGeometryGraphicOp,
+             TextTooltipDialog,
+             DefaultSymbolEditors,
+             GraphicSymbolEditor,
+             popup,
+             Menu,
+             MenuItem,
+             PopupMenuItem,
+             CheckedMenuItem) {
     return declare([_WidgetBase, _TemplatedMixin, _WidgetsInTemplateMixin], {
         // widget
         templateString: template,
@@ -101,51 +101,40 @@ define([
         baseClass: 'AdvancedDrawWidget',
         widgetsInTemplate: true,
         mapClickMode: null,
-        // params mixin
-        _params: {
-            map: null, // class params
-            config: null,
-            stickyLayers: true,
-            stickyPosition: 'bottom',
-            _layers: {
-                polygon: null,
-                polyline: null,
-                point: null,
-                text: null,
-                temp: null
-            }, // hash of layers
-            _layersLoaded: false, // what is says
-            _symbols: {
-                polygon: null,
-                polyline: null,
-                point: null,
-                text: null,
-                temp: null
-            }, // hash of symbols
-            _drawButtonClickHandler: null, // click handler for draw button
-            _snappingMenuItem: null, // snapping toggle
-            _continuousDrawMenuItem: null, // continuous draw toggle
-            _continuousDraw: false, // one and done OR user cancel draw
-            _isTextPoint: false, // flag to handle text on draw-complete
-            _drawMenu: null, // primary draw menu
-            _undo: null, // undo manager
-            //undocumented or unused
-            manualLayerLoad: false // unused - enhancement - don't _initLayers when true - add public method to init layers at devs discretion
-        },
+        i18n: i18n,
+        map: null,
 
-        constructor: function (params) {
-            // mixin params
-            lang.mixin(this, this._params, params || {});
-
-            // i18n for widget template
-            this.i18n = i18n;
-        },
+        stickyLayers: true,
+        stickyPosition: 'bottom',
+        _layers: {
+            polygon: null,
+            polyline: null,
+            point: null,
+            text: null,
+            temp: null
+        }, // hash of layers
+        _layersLoaded: false, // what is says
+        _symbols: {
+            polygon: null,
+            polyline: null,
+            point: null,
+            text: null,
+            temp: null
+        }, // hash of symbols
+        _drawButtonClickHandler: null, // click handler for draw button
+        _snappingMenuItem: null, // snapping toggle
+        _continuousDrawMenuItem: null, // continuous draw toggle
+        _continuousDraw: false, // one and done OR user cancel draw
+        _isTextPoint: false, // flag to handle text on draw-complete
+        _drawMenu: null, // primary draw menu
+        _undo: null, // undo manager
+        //undocumented or unused
+        manualLayerLoad: false, // unused - enhancement - don't _initLayers when true - add public method to init layers at devs discretion
 
         postCreate: function () {
             this.inherited(arguments);
-
             this.own(topic.subscribe('mapClickMode/currentSet', lang.hitch(this, 'setMapClickMode')));
-
+            this.params = lang.mixin(this.params, this._params)
             // map is required
             if (!this.map) {
                 console.log('Error, Advanced draw needs a map reference');  // eslint-disable-line
@@ -162,12 +151,12 @@ define([
             // stack containers in templated widgets must be started - bug?
             this.stackNode.startup();
             // config mixin
-            this.config = lang.mixin(advancedDrawConfig, this.config || {});
+            // this.config = lang.mixin(this.config || {});
             // check for loaded map and go
             if (this.map.loaded) {
-                this._initialize(this.config, this.map);
+                this._initialize(this.params, this.map);
             } else {
-                this.map.on('load', lang.hitch(this, '_initialize', this.config, this.map));
+                this.map.on('load', lang.hitch(this, '_initialize', this.params, this.map));
             }
         },
 
@@ -210,8 +199,9 @@ define([
 
         // create draw layers and add to map
         //   NOTES:
-        //   spatial reference set by map unless WM where wkid: 4326 
+        //   spatial reference set by map unless WM where wkid: 4326
         _initLayers: function (config, map, _layers) {
+
             // polygon
             _layers.polygon = new FeatureLayer({
                 layerDefinition: lang.mixin(config._layerDefinition, {
@@ -331,10 +321,10 @@ define([
             this._symbols.point = symbolUtils.fromJson(config.defaultPointSymbol);
             this._symbols.text = symbolUtils.fromJson(config.defaultTextSymbol);
             this._symbols.temp = symbolUtils.fromJson(config.defaultTempSymbol);
-
             this._defaultSymbolEditors = new DefaultSymbolEditors({
+                config: this.params,
                 symbols: this._symbols,
-                colorPickerOptions: this.config.colorPickerOptions
+                colorPickerOptions: this.params.colorPickerOptions
             }, this.defaultSymbolEditorsNode);
             this._defaultSymbolEditors.startup();
         },
@@ -418,7 +408,6 @@ define([
         // any keys wired up for drawing
         _initDrawKeys: function () {
             on(document, 'keypress', lang.hitch(this, function (evt) {
-                //console.log(evt.keyCode);
                 // press 'C' key to toggle continuous draw
                 if (evt.keyCode && evt.keyCode === 99) {
                     var cNode = this.continuousToggleNode;
@@ -451,8 +440,6 @@ define([
 
         // housekeeping and activate draw toolbar
         _draw: function (type) {
-
-
             if (this._drawTb._geometryType) {
                 this._drawTb.deactivate();
             }
@@ -462,50 +449,51 @@ define([
             // show the appropriate default symbol editor
             switch (type) {
 
-            case 'point':
-                this._defaultSymbolEditors.showSMSEditor();
-                this._updateDrawLabelClass('adw-icon-point');
-                break;
+                case 'point':
+                    lang.hitch(this, this._defaultSymbolEditors.showSMSEditor());
+                    this._updateDrawLabelClass('adw-icon-point');
+                    break;
 
-            case 'polyline':
-                this._updateDrawLabelClass('adw-icon-polyline');
-                this._defaultSymbolEditors.showSLSEditor();
-                break;
+                case 'polyline':
+                    this._updateDrawLabelClass('adw-icon-polyline');
+                    this._defaultSymbolEditors.showSLSEditor();
+                    break;
 
-            case 'freehandpolyline':
-                this._defaultSymbolEditors.showSLSEditor();
-                this._updateDrawLabelClass('adw-icon-freehand-polyline');
-                break;
+                case 'freehandpolyline':
+                    this._defaultSymbolEditors.showSLSEditor();
+                    this._updateDrawLabelClass('adw-icon-freehand-polyline');
+                    break;
 
-            case 'polygon':
-                this._updateDrawLabelClass('adw-icon-polygon');
-                this._defaultSymbolEditors.showSFSEditor();
-                break;
+                case 'polygon':
+                    this._updateDrawLabelClass('adw-icon-polygon');
+                    this._defaultSymbolEditors.showSFSEditor();
+                    break;
 
-            case 'freehandpolygon':
-                this._updateDrawLabelClass('adw-icon-freehand-polygon');
-                this._defaultSymbolEditors.showSFSEditor();
-                break;
+                case 'freehandpolygon':
+                    this._updateDrawLabelClass('adw-icon-freehand-polygon');
+                    this._defaultSymbolEditors.showSFSEditor();
+                    break;
 
-            case 'extent':
-                this._updateDrawLabelClass('adw-icon-rectangle');
-                this._defaultSymbolEditors.showSFSEditor();
-                break;
+                case 'extent':
+                    this._updateDrawLabelClass('adw-icon-rectangle');
+                    this._defaultSymbolEditors.showSFSEditor();
+                    break;
 
-            case 'circle':
-                this._defaultSymbolEditors.showSFSEditor();
-                this._updateDrawLabelClass('adw-icon-circle');
-                break;
+                case 'circle':
+                    this._defaultSymbolEditors.showSFSEditor();
+                    this._updateDrawLabelClass('adw-icon-circle');
+                    break;
 
-            case 'text':
-                this._defaultSymbolEditors.showSFSEditor();
-                this._updateDrawLabelClass('adw-icon-text');
-                break;
+                case 'text':
+                    // this._defaultSymbolEditors.showSFSEditor();
+                    this._defaultSymbolEditors.showTextEditor();
+                    this._updateDrawLabelClass('adw-icon-text');
+                    break;
 
-            default:
-                this._defaultSymbolEditors.showSMSEditor();
-                this._updateDrawLabelClass('adw-icon-point');
-                break;
+                default:
+                    this._defaultSymbolEditors.showSMSEditor();
+                    this._updateDrawLabelClass('adw-icon-point');
+                    break;
             }
             this._setDrawButton(type);
             this.cancelButton.set('disabled', false);
@@ -533,6 +521,7 @@ define([
 
         // draw-complete callback
         _drawComplete: function (result) {
+
             this.connectMapClick();
             if (!this._continuousDraw) {
                 this._drawCancel();
@@ -600,9 +589,13 @@ define([
             );
 
             // extend the graphic object w/ its own tooltip dialog
+            if (graphic._advancedDrawTextTooltipDialog) {
+                graphic._advancedDrawTextTooltipDialog.destroy()
+            }
             graphic._advancedDrawTextTooltipDialog = new TextTooltipDialog({
                 _graphic: graphic,
                 i18n: i18n
+                //default: this.params.defaultTextSymbol
             });
             // add text graphic
             this._layers.text.add(graphic);
@@ -622,8 +615,8 @@ define([
                 mp = domGeom.position(dom.byId(map.id), false);
             popup.open({
                 popup: graphic._advancedDrawTextTooltipDialog,
-                x: sp.x + mp.x + this.config._textTooltipDialogOffset.x,
-                y: sp.y + mp.y + this.config._textTooltipDialogOffset.y
+                x: sp.x + mp.x + this.params._textTooltipDialogOffset.x,
+                y: sp.y + mp.y + this.params._textTooltipDialogOffset.y
             });
         },
 
@@ -671,7 +664,8 @@ define([
                 if (!graphic._advancedDrawTextTooltipDialog) {
                     graphic._advancedDrawTextTooltipDialog = new TextTooltipDialog({
                         graphic: graphic,
-                        i18n: i18n
+                        i18n: i18n,
+                        default: this.params.defaultTextSymbol
                     });
                     graphic._textTooltip.textNode.set('value', graphic.symbol.text);
                 }
@@ -686,6 +680,7 @@ define([
                 label: 'Edit Symbol',
                 onClick: lang.hitch(this, '_editGraphicSymbol', graphic)
             }));
+
             // edit geometry adding applicable operations to menu
             var editMenu = new Menu();
             var editor = this._editTb.constructor;
@@ -747,7 +742,7 @@ define([
         // edit graphic geometry and symbol //
         //////////////////////////////////////
         _editGraphicGeometry: function (graphic, tool, uniform) {
-            var options = this.config._editGeometryOptions;
+            var options = this.params._editGeometryOptions;
             if (tool === 4) {
                 options.uniformScaling = uniform;
             }
@@ -769,7 +764,7 @@ define([
         _identifyGraphic: function (graphic) {
             var layer = this._layers.temp;
             layer.clear();
-            layer.add(new Graphic(this.map.extent, symbolUtils.fromJson(this.config.defaultTempSymbol)));
+            layer.add(new Graphic(this.map.extent, symbolUtils.fromJson(this.params.defaultTempSymbol)));
             layer.add(new Graphic(graphic.geometry, graphic.symbol));
             graphic._advancedDrawMenu.on('blur', function () {
                 layer.clear();
@@ -790,7 +785,8 @@ define([
         _editGraphicSymbol: function (graphic) {
             var editor = new GraphicSymbolEditor({
                 graphic: graphic,
-                colorPickerOptions: this.config.colorPickerOptions
+                config: this.params,
+                colorPickerOptions: this.params.colorPickerOptions
             });
             on(editor, 'hide', lang.hitch(this, function () {
                 this._addUndoOp(editor.undoOp);
@@ -812,7 +808,7 @@ define([
         // snapping and continuous draw //
         //////////////////////////////////
         _initSnapping: function () {
-            var options = this.config._snappingOptions;
+            var options = this.params._snappingOptions;
             options.snapPointSymbol = symbolUtils.fromJson(options.snapPointSymbol);
             if (options.snapKey) {
                 options.snapKey = keys[options.snapKey];
@@ -823,7 +819,7 @@ define([
         _toggleSnapping: function () {
             var node = this.snappingToggleNode;
             if (node.checked) {
-                this.map.enableSnapping(this.config._snappingOptions);
+                this.map.enableSnapping(this.params._snappingOptions);
                 domClass.add(node.iconNode, 'fa-check');
             } else {
                 this.map.disableSnapping();

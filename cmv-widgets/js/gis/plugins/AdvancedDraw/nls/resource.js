@@ -29,7 +29,8 @@ define({
             placeholder: 'Add text',
             addText: 'Add Text',
             angle: 0,
-            angleLabel: 'Angle'
+            angleLabel: 'Angle',
+            fontSizeLabel: 'Size'
         },
         graphicMenu: {},
         undoManager: {
@@ -45,6 +46,33 @@ define({
             },
             symbolStylePicker: {
                 label: 'Style'
+            },
+            fontPicker: {
+                // label: 'Font',
+                defaultSize: 12,
+                defaultAngle: 0,
+                fontSizeLabel: 'Size',
+                fontAngleLabel: 'Angle',
+                fontWeightLabel: 'Weight',
+                fontLabel: 'Font',
+                fonts: [
+                    'Courier',
+                    'Helvetica',
+                    'Monaco',
+                    'Geneva',
+                    'Arial'
+                ],
+                weights: [
+                    'bolder',
+                    'bold',
+                    'normal',
+                    'lighter'
+                ],
+                fontDecorations: [
+                    'none',
+                    'underline',
+                    'line-through'
+                ]
             },
             symbolSizePicker: {
                 label: 'Size'
@@ -68,6 +96,17 @@ define({
                 defaultEditorLabel: 'Default line symbol',
                 graphicEditorLabel: 'Selected line symbol',
                 leftHandControlsLabel: 'Line properties'
+            },
+            textEditor: {
+                defaultEditorLabel: 'Default text symbol',
+                textColorLabel: 'Text Color',
+                haloColorLabel: 'Halo Color',
+                fontSizeLabel: 'Font Size',
+                textAngleLabel: 'Text Angle',
+                haloWidthLabel: 'Halo Width',
+                fontWeightLabel: 'Font Weight',
+                fontStyleLabel: 'Font Style'
+
             },
             graphicSymbolEditor: {
                 title: 'Edit symbol'

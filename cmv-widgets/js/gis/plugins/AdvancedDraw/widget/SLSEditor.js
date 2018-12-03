@@ -5,37 +5,31 @@ define([
     './_SymEditorBase',
     './SymColorPicker',
     './StylePicker',
-    './NumericSlider'
+    './NumericSlider',
+    'dojo/i18n!../nls/resource'
 ], function (declare,
-    lang,
-    query,
-    _SymEditorBase,
-    SymColorPicker,
-    StylePicker,
-    NumericSlider) {
+             lang,
+             query,
+             _SymEditorBase,
+             SymColorPicker,
+             StylePicker,
+             NumericSlider,
+             i18n) {
 
     return declare(_SymEditorBase, {
-
-        constructor: function (options) {
-
-            options = options || {};
-
-            if (!options.symbol) {
-                options.symbol = this.advancedDrawConfig.defaultPolylineSymbol;
-            }
-            lang.mixin(this, options);
-
-            this.initialized = false;
-            this.editorLabel = this.i18n.widgets.slsEditor.defaultEditorLabel;
-            this.leftHandControlsLabel = this.i18n.widgets.slsEditor.leftHandControlsLabel;
-
-            this._set('symbol', this.symbol);
-
-        },
+        symbol: null,
+        initialized: false,
+        editorLabel: i18n.widgets.smsEditor.defaultEditorLabel,
+        leftHandControlsLabel: i18n.widgets.smsEditor.leftHandControlsLabel,
 
         postCreate: function () {
-
             this.inherited(arguments);
+
+            if (!this.symbol) {
+                this.symbol = this.params.config.defaultPolylineSymbol;
+            }
+            this._set('symbol', this.symbol);
+
 
             this._initOutlineStylePicker();
             this._initOutlineColorPicker();
