@@ -201,7 +201,6 @@ define([
                 return;
             }
             var symbol = this.getSymbol();
-
             this._set('symbol', symbol);
         },
 
@@ -228,6 +227,23 @@ define([
             symbol.font.weight = this.boldButton.checked ? 'bold' : 'normal';
             symbol.font.decoration = this.getFontDecoration();
             return symbol;
+        },
+
+        _setSymbolAttr: function (value) {
+            if (this.initialized) {
+                this.sizeSpinner.set('value', value.font.size);
+                this.textColorPicker.set('color', value.color);
+                this.haloColorPicker.set('color', value.haloColor);
+                this.haloWidthSpinner.set('value', value.haloSize);
+                this.angleSpinner.set('value', value.angle);
+                this.italicButton.set('checked', value.font.style === 'italic')
+                this.boldButton.set('checked', value.font.weight === 'bold')
+                this.linethroughButton.set('checked', value.font.decoration === 'line-through')
+                this.underlineButton.set('checked', value.font.decoration === 'underline')
+            }
+
+            this.symbol = value;
+
         }
 
     });
