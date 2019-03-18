@@ -103,7 +103,7 @@ define([
         mapOptions: {
             basemap: new Basemap({
                 layers: [new BasemapLayer({
-                    url: 'https://geodata.state.nj.us/arcgis/rest/services/Basemap/Highlands_NJ/MapServer'
+                    url: 'https://maps.nj.gov/arcgis/rest/services/Basemap/Highlands_NJ/MapServer'
                 })]
             }),
             center: new Point({

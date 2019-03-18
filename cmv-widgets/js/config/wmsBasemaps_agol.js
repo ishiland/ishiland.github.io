@@ -6,7 +6,7 @@ define([
     'esri/layers/WMSLayerInfo'
 ], function (WMSLayer, WMSLayerInfo) {
 
-    var wmsBaseUrl = 'https://geodata.state.nj.us/imagerywms/';
+    var wmsBaseUrl = 'https://img.nj.gov/imagerywms/';
 
     // Configure State of New Jersey's WMS Server
     var resourceInfo = {

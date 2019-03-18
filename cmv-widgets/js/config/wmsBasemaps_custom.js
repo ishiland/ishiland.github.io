@@ -6,7 +6,7 @@ define([
     'esri/dijit/BasemapLayer'
 ], function (WMSLayer, WMSLayerInfo, Extent, Basemap, BasemapLayer) {
 
-    var wmsBaseUrl = 'https://geodata.state.nj.us/imagerywms/';
+    var wmsBaseUrl = 'https://img.nj.gov/imagerywms/';
 
     var resourceInfo = {
         extent: new Extent({
@@ -43,7 +43,7 @@ define([
                 basemap: new Basemap({
                     id: 'HCGIS',
                     layers: [new BasemapLayer({
-                        url: 'https://geodata.state.nj.us/arcgis/rest/services/Basemap/Highlands_NJ/MapServer'
+                        url: 'https://maps.nj.gov/arcgis/rest/services/Basemap/Highlands_NJ/MapServer'
                     })]
                 })
             },
@@ -53,7 +53,7 @@ define([
                 basemap: new Basemap({
                     id: 'OGIS',
                     layers: [new BasemapLayer({
-                        url: 'https://geodata.state.nj.us/arcgis/rest/services/Basemap/Color_NJ/MapServer'
+                        url: 'https://maps.nj.gov/arcgis/rest/services/Basemap/Color_NJ/MapServer'
                     })]
                 })
             },
